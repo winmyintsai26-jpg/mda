@@ -1,9 +1,18 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+
+import UploadCard from "../components/UploadCard";
+import { useUpload } from "../context/UploadContext";
 
 function Dashboard() {
 
+    const navigate = useNavigate();
+
+    const { setTable, setFileName } = useUpload();
+
     const [file, setFile] = useState(null);
-    const [rows, setRows] = useState([]);
+
+    const [isUploading, setIsUploading] = useState(false);
 
     const handleFileChange = (event) => {
         setFile(event.target.files[0]);
@@ -19,98 +28,76 @@ function Dashboard() {
         const formData = new FormData();
         formData.append("file", file);
 
-        const response = await fetch("http://localhost:5176/upload", {
-            method: "POST",
-            body: formData,
-        });
+        try {
 
-        const data = await response.json();
+            setIsUploading(true);
 
-        setRows(data);
+            const response = await fetch("http://localhost:5176/upload", {
+                method: "POST",
+                body: formData,
+            });
+
+            if (!response.ok) {
+                alert("Upload failed.");
+                return;
+            }
+
+            const data = await response.json();
+
+            const headers = data[0].map((header, index) => ({
+                id: index,
+                name: header
+            }));
+
+            const body = data.slice(1);
+
+            const uploadedTable = {
+                headers,
+                rows: body
+            };
+
+            setTable(uploadedTable);
+
+            setFileName(file.name);
+
+            navigate("/preview");
+
+        }
+        catch (err) {
+
+            console.error(err);
+            alert("Unable to connect to the server.");
+
+        }
+        finally {
+
+            setIsUploading(false);
+
+        }
+
     };
 
     return (
-        <div style={{ maxWidth: "1000px", margin: "40px auto", fontFamily: "Arial" }}>
+
+        <div className="dashboard">
 
             <h1>Manufacturing Data Platform</h1>
 
-            <hr />
+            <p className="subtitle">
+                Turn Excel Files into Database Records
+            </p>
 
-            <h3>Upload Excel File</h3>
-
-            <input
-                type="file"
-                onChange={handleFileChange}
+            <UploadCard
+                file={file}
+                onFileChange={handleFileChange}
+                onUpload={handleUpload}
+                isUploading={isUploading}
             />
 
-            <button
-                onClick={handleUpload}
-                style={{ marginLeft: "15px" }}
-            >
-                Upload
-            </button>
-
-            <br />
-            <br />
-
-            {rows.length > 0 && (
-
-                <>
-
-                    <h2>Preview</h2>
-
-                    <table
-                        border="1"
-                        cellPadding="8"
-                        style={{
-                            borderCollapse: "collapse",
-                            width: "100%"
-                        }}
-                    >
-
-                        <tbody>
-
-                            {rows.map((row, rowIndex) => (
-
-                                <tr key={rowIndex}>
-
-                                    {row.map((cell, cellIndex) => (
-
-                                        <td key={cellIndex}>
-                                            {cell}
-                                        </td>
-
-                                    ))}
-
-                                </tr>
-
-                            ))}
-
-                        </tbody>
-
-                    </table>
-
-                    <br />
-
-                    <strong>
-                        Rows Detected: {rows.length - 1}
-                    </strong>
-
-                    <br />
-                    <br />
-
-                    <button>
-
-                        Import
-
-                    </button>
-
-                </>
-
-            )}
-
         </div>
+
     );
+
 }
 
 export default Dashboard;
