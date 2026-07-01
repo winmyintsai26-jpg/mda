@@ -1,5 +1,8 @@
 using ClosedXML.Excel;
 using MDA.API.WorkbookAnalysis;
+using MDA.API.WorkbookAnalysis.Columns;
+using MDA.API.WorkbookAnalysis.DataTypes;
+using MDA.API.WorkbookAnalysis.Validation;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -85,6 +88,9 @@ app.MapPost("/analyze", async (IFormFile file) =>
         new DefaultRegionDetector(),
         new DefaultHeaderDetector(),
         new DefaultTableClassifier(),
+        new TableValidator(),
+        new DefaultColumnDetector(),
+        new DefaultDataTypeDetector(),
         new WorkbookAnalysisOptions());
 
     var analysisResult = analyzer.Analyze(loadResult.Workbook);

@@ -5,24 +5,23 @@ import UploadCard from "../components/UploadCard";
 import { useUpload } from "../context/UploadContext";
 
 function Dashboard() {
-
     const navigate = useNavigate();
-
-    const { setTable, setFileName } = useUpload();
+    const { setTable, setFileName, setAnalysisTables, setSelectedTableIndex } = useUpload();
 
     const [file, setFile] = useState(null);
-
     const [isUploading, setIsUploading] = useState(false);
     const [isAnalyzing, setIsAnalyzing] = useState(false);
-    const [analysisJson, setAnalysisJson] = useState("");
 
     const handleFileChange = (event) => {
-        setFile(event.target.files[0]);
-        setAnalysisJson("");
+        const chosenFile = event.target.files[0];
+        setFile(chosenFile);
+        setAnalysisTables([]);
+        setSelectedTableIndex(null);
+        setTable(null);
+        setFileName("");
     };
 
     const handleUpload = async () => {
-
         if (!file) {
             alert("Please choose an Excel file.");
             return;
@@ -32,7 +31,6 @@ function Dashboard() {
         formData.append("file", file);
 
         try {
-
             setIsUploading(true);
 
             const response = await fetch("http://localhost:5176/upload", {
@@ -46,42 +44,21 @@ function Dashboard() {
             }
 
             const data = await response.json();
-
-            const headers = data[0].map((header, index) => ({
-                id: index,
-                name: header
-            }));
-
+            const headers = data[0].map((header, index) => ({ id: index, name: header }));
             const body = data.slice(1);
 
-            const uploadedTable = {
-                headers,
-                rows: body
-            };
-
-            setTable(uploadedTable);
-
+            setTable({ headers, rows: body });
             setFileName(file.name);
-
             navigate("/preview");
-
-        }
-        catch (err) {
-
+        } catch (err) {
             console.error(err);
             alert("Unable to connect to the server.");
-
-        }
-        finally {
-
+        } finally {
             setIsUploading(false);
-
         }
-
     };
 
     const handleAnalyze = async () => {
-
         if (!file) {
             alert("Please choose an Excel file.");
             return;
@@ -91,7 +68,6 @@ function Dashboard() {
         formData.append("file", file);
 
         try {
-
             setIsAnalyzing(true);
 
             const response = await fetch("http://localhost:5176/analyze", {
@@ -105,32 +81,53 @@ function Dashboard() {
             }
 
             const data = await response.json();
-            setAnalysisJson(JSON.stringify(data, null, 2));
+            const validTables = [];
 
-        }
-        catch (err) {
+            data.worksheets?.forEach((worksheet) => {
+                worksheet.candidateRegions?.forEach((region, index) => {
+                    if (region.tableValidation?.isValid === true) {
+                        validTables.push({
+                            worksheetName: worksheet.sheetName,
+                            rows: region.rows || [],
+                            headers: region.headerDetectionResult?.winningHeader?.headerCells ?
+                                region.headerDetectionResult.winningHeader.headerCells.slice(-1)[0] : [],
+                            rowCount: region.rows?.length || 0,
+                            columnCount: region.headerDetectionResult?.winningHeader?.headerCells?.slice(-1)[0]?.length || 0,
+                            regionIndex: index
+                        });
+                    }
+                });
+            });
 
+            setAnalysisTables(validTables);
+            setSelectedTableIndex(validTables.length === 1 ? 0 : null);
+
+            if (validTables.length === 1) {
+                const single = validTables[0];
+                setTable({ headers: single.headers.map((name, idx) => ({ id: idx, name })), rows: single.rows });
+                setFileName(file.name);
+                navigate("/preview");
+            } else if (validTables.length > 1) {
+                setTable({ headers: [], rows: [] });
+                setFileName(file.name);
+                navigate("/preview?mode=select");
+            } else {
+                setTable({ headers: [], rows: [] });
+                setFileName(file.name);
+                navigate("/preview");
+            }
+        } catch (err) {
             console.error(err);
             alert("Unable to connect to the server.");
-
-        }
-        finally {
-
+        } finally {
             setIsAnalyzing(false);
-
         }
-
     };
 
     return (
-
         <div className="dashboard">
-
             <h1>Manufacturing Data Platform</h1>
-
-            <p className="subtitle">
-                Turn Excel Files into Database Records
-            </p>
+            <p className="subtitle">Turn Excel Files into Database Records</p>
 
             <UploadCard
                 file={file}
@@ -148,18 +145,8 @@ function Dashboard() {
                     {isAnalyzing ? "Analyzing..." : "Analyze"}
                 </button>
             </div>
-
-            {analysisJson && (
-                <div className="analysis-output">
-                    <h2>Analysis Result</h2>
-                    <pre>{analysisJson}</pre>
-                </div>
-            )}
-
         </div>
-
     );
-
 }
 
 export default Dashboard;

@@ -27,23 +27,141 @@ public class DefaultRegionDetector : IRegionDetector
 
             foreach (var columnBlock in columnBlocks)
             {
-                var innerRowOccupied = BuildRowOccupancy(scanResult.Occupied, columnBlock.start, columnBlock.end, rowBlock.start, rowBlock.end);
-                var innerRowBlocks = BuildLineGroups(innerRowOccupied, options.MaxBlankRows);
-
-                foreach (var innerRowBlock in innerRowBlocks)
+                regions.Add(new CandidateRegion
                 {
-                    regions.Add(new CandidateRegion
+                    StartRow = scanResult.StartRow + rowBlock.start,
+                    EndRow = scanResult.StartRow + rowBlock.end,
+                    StartColumn = scanResult.StartColumn + columnBlock.start,
+                    EndColumn = scanResult.StartColumn + columnBlock.end
+                });
+            }
+        }
+
+        return MergeCloseRegions(regions, options);
+    }
+
+    private static List<CandidateRegion> MergeCloseRegions(List<CandidateRegion> regions, WorkbookAnalysisOptions options)
+    {
+        if (!regions.Any())
+        {
+            return regions;
+        }
+
+        var mergedRegions = new List<CandidateRegion>(regions);
+        var didMerge = true;
+
+        while (didMerge)
+        {
+            didMerge = false;
+
+            for (var i = 0; i < mergedRegions.Count; i++)
+            {
+                for (var j = i + 1; j < mergedRegions.Count; j++)
+                {
+                    var first = mergedRegions[i];
+                    var second = mergedRegions[j];
+
+                    if (ShouldMerge(first, second, options))
                     {
-                        StartRow = scanResult.StartRow + innerRowBlock.start,
-                        EndRow = scanResult.StartRow + innerRowBlock.end,
-                        StartColumn = scanResult.StartColumn + columnBlock.start,
-                        EndColumn = scanResult.StartColumn + columnBlock.end
-                    });
+                        mergedRegions[i] = MergeRegions(first, second);
+                        mergedRegions.RemoveAt(j);
+                        didMerge = true;
+                        break;
+                    }
+                }
+
+                if (didMerge)
+                {
+                    break;
                 }
             }
         }
 
-        return regions;
+        return RemoveContainedRegions(mergedRegions);
+    }
+
+    private static List<CandidateRegion> RemoveContainedRegions(List<CandidateRegion> regions)
+    {
+        var filtered = new List<CandidateRegion>();
+
+        foreach (var region in regions.OrderByDescending(r => GetArea(r)))
+        {
+            if (!filtered.Any(existing => Contains(existing, region)))
+            {
+                filtered.Add(region);
+            }
+        }
+
+        return filtered;
+    }
+
+    private static bool Contains(CandidateRegion outer, CandidateRegion inner)
+    {
+        return outer.StartRow <= inner.StartRow
+            && outer.EndRow >= inner.EndRow
+            && outer.StartColumn <= inner.StartColumn
+            && outer.EndColumn >= inner.EndColumn;
+    }
+
+    private static int GetArea(CandidateRegion region)
+    {
+        return (region.EndRow - region.StartRow + 1) * (region.EndColumn - region.StartColumn + 1);
+    }
+
+    private static bool ShouldMerge(CandidateRegion first, CandidateRegion second, WorkbookAnalysisOptions options)
+    {
+        var rowGap = GetGap(first.StartRow, first.EndRow, second.StartRow, second.EndRow);
+        var colGap = GetGap(first.StartColumn, first.EndColumn, second.StartColumn, second.EndColumn);
+        var rowOverlap = GetOverlap(first.StartRow, first.EndRow, second.StartRow, second.EndRow);
+        var colOverlap = GetOverlap(first.StartColumn, first.EndColumn, second.StartColumn, second.EndColumn);
+
+        if (rowOverlap > 0 && colOverlap > 0)
+        {
+            return true;
+        }
+
+        if (rowOverlap > 0 && colGap <= options.MaxBlankColumns)
+        {
+            return true;
+        }
+
+        if (colOverlap > 0 && rowGap <= options.MaxBlankRows)
+        {
+            return true;
+        }
+
+        return false;
+    }
+
+    private static int GetGap(int firstStart, int firstEnd, int secondStart, int secondEnd)
+    {
+        if (secondStart > firstEnd)
+        {
+            return secondStart - firstEnd - 1;
+        }
+
+        if (firstStart > secondEnd)
+        {
+            return firstStart - secondEnd - 1;
+        }
+
+        return 0;
+    }
+
+    private static int GetOverlap(int firstStart, int firstEnd, int secondStart, int secondEnd)
+    {
+        return Math.Max(0, Math.Min(firstEnd, secondEnd) - Math.Max(firstStart, secondStart) + 1);
+    }
+
+    private static CandidateRegion MergeRegions(CandidateRegion first, CandidateRegion second)
+    {
+        return new CandidateRegion
+        {
+            StartRow = Math.Min(first.StartRow, second.StartRow),
+            EndRow = Math.Max(first.EndRow, second.EndRow),
+            StartColumn = Math.Min(first.StartColumn, second.StartColumn),
+            EndColumn = Math.Max(first.EndColumn, second.EndColumn)
+        };
     }
 
     private static List<bool> BuildColumnOccupancy(List<List<bool>> occupied, int rowStart, int rowEnd)

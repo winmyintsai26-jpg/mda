@@ -1,3 +1,5 @@
+using MDA.API.WorkbookAnalysis.Columns;
+
 namespace MDA.API.WorkbookAnalysis.Models;
 
 public class CandidateRegion
@@ -17,4 +19,8 @@ public class CandidateRegion
     public HeaderDetectionResult HeaderDetectionResult { get; set; } = new();
 
     public TableClassificationResult TableClassification { get; set; } = new();
+
+    public TableValidationResult TableValidation { get; set; } = new();
+
+    public List<DetectedColumn> Columns { get; set; } = new();
 }

@@ -7,6 +7,8 @@ export function UploadProvider({ children }) {
     const [table, setTable] = useState(null);
 
     const [fileName, setFileName] = useState("");
+    const [analysisTables, setAnalysisTables] = useState([]);
+    const [selectedTableIndex, setSelectedTableIndex] = useState(null);
 
     return (
 
@@ -15,7 +17,11 @@ export function UploadProvider({ children }) {
                 table,
                 setTable,
                 fileName,
-                setFileName
+                setFileName,
+                analysisTables,
+                setAnalysisTables,
+                selectedTableIndex,
+                setSelectedTableIndex
             }}
         >
 
