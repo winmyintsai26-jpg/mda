@@ -1,4 +1,5 @@
 using ClosedXML.Excel;
+using MDA.API.WorkbookAnalysis;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -58,6 +59,37 @@ app.MapPost("/upload", async (IFormFile file) =>
     }
 
     return Results.Ok(rows);
+})
+.DisableAntiforgery();
+
+app.MapPost("/analyze", async (IFormFile file) =>
+{
+    if (file == null || file.Length == 0)
+    {
+        return Results.BadRequest("No file uploaded.");
+    }
+
+    using var stream = new MemoryStream();
+    await file.CopyToAsync(stream);
+    stream.Position = 0;
+
+    var loader = new DefaultWorkbookLoader();
+    var loadResult = await loader.LoadAsync(stream, file.FileName);
+    if (!loadResult.Success || loadResult.Workbook == null)
+    {
+        return Results.BadRequest(loadResult.ErrorMessage);
+    }
+
+    var analyzer = new WorkbookAnalyzer(
+        new WorksheetScanner(),
+        new DefaultRegionDetector(),
+        new DefaultHeaderDetector(),
+        new DefaultTableClassifier(),
+        new WorkbookAnalysisOptions());
+
+    var analysisResult = analyzer.Analyze(loadResult.Workbook);
+
+    return Results.Ok(analysisResult);
 })
 
 .DisableAntiforgery();
