@@ -112,12 +112,10 @@ public class WorkbookAnalyzer
             return;
         }
 
-        var headerRow = GetNormalizedRow(GetEffectiveHeaderRow(headerRows));
+        var normalizedHeaderRows = headerRows.Select(GetNormalizedRow).ToList();
         var headerRowCount = headerRows.Count;
         var headerStartIndex = region.HeaderDetectionResult.WinningHeader.HeaderStartRowRelative;
         var dataStartIndex = headerStartIndex + headerRowCount;
-
-        LogHeaderComparison(region, headerRow, dataStartIndex);
 
         var cleanedRows = new List<List<string>>();
         cleanedRows.AddRange(region.Rows.Take(headerStartIndex));
@@ -125,7 +123,7 @@ public class WorkbookAnalyzer
         for (var rowIndex = dataStartIndex; rowIndex < region.Rows.Count; rowIndex++)
         {
             var row = region.Rows[rowIndex];
-            if (IsRepeatedHeaderRow(row, headerRow))
+            if (IsRepeatedHeaderRow(row, normalizedHeaderRows))
             {
                 continue;
             }
@@ -136,79 +134,38 @@ public class WorkbookAnalyzer
         region.Rows = cleanedRows;
     }
 
-    private static void LogHeaderComparison(CandidateRegion region, List<string> headerRow, int dataStartIndex)
-    {
-        if (region.Rows.Count <= dataStartIndex)
-        {
-            return;
-        }
-
-        var firstDataRow = region.Rows[dataStartIndex];
-        var normalizedDataRow = GetNormalizedRow(firstDataRow);
-
-        Console.WriteLine("[WorkbookAnalyzer] Header comparison details:");
-        Console.WriteLine($"  Region [{region.StartRow},{region.StartColumn}] - [{region.EndRow},{region.EndColumn}]");
-        Console.WriteLine($"  HeaderStartRowRelative={region.HeaderDetectionResult!.WinningHeader.HeaderStartRowRelative}, HeaderRowCount={region.HeaderDetectionResult.WinningHeader.HeaderCells.Count}, DataStartIndex={dataStartIndex}");
-        Console.WriteLine($"  Header rows count: {region.HeaderDetectionResult.WinningHeader.HeaderCells.Count}");
-        Console.WriteLine($"  Header row raw: {FormatRowForLog(GetEffectiveHeaderRow(region.HeaderDetectionResult.WinningHeader.HeaderCells))}");
-        Console.WriteLine($"  Header row normalized: {FormatRowForLog(headerRow)}");
-        Console.WriteLine($"  First data row raw: {FormatRowForLog(firstDataRow)}");
-        Console.WriteLine($"  First data row normalized: {FormatRowForLog(normalizedDataRow)}");
-
-        if (firstDataRow.Count != headerRow.Count)
-        {
-            Console.WriteLine($"  Row counts differ: dataRow={firstDataRow.Count} headerRow={headerRow.Count}");
-        }
-
-        var headerNormalized = GetNormalizedRow(headerRow);
-        for (var index = 0; index < Math.Max(firstDataRow.Count, headerNormalized.Count); index++)
-        {
-            var rawCell = index < firstDataRow.Count ? firstDataRow[index] : null;
-            var normalizedCell = index < normalizedDataRow.Count ? normalizedDataRow[index] : null;
-            var headerCell = index < headerNormalized.Count ? headerNormalized[index] : null;
-            var equal = index < normalizedDataRow.Count && index < headerNormalized.Count && string.Equals(normalizedCell, headerCell, StringComparison.OrdinalIgnoreCase);
-            Console.WriteLine($"    Col {index}: raw=" + FormatCellForLog(rawCell) + " header=" + FormatCellForLog(headerCell) + " norm=" + FormatCellForLog(normalizedCell) + " equal=" + equal);
-        }
-    }
-
-    private static string FormatRowForLog(List<string> row)
-    {
-        return string.Join(" | ", row.Select(FormatCellForLog));
-    }
-
-    private static string FormatCellForLog(string? cell)
-    {
-        if (cell == null)
-        {
-            return "<null>";
-        }
-
-        var visible = cell
-            .Replace("\r", "\\r")
-            .Replace("\n", "\\n")
-            .Replace("\t", "\\t");
-
-        var codePoints = string.Join(" ", visible.Select(c => ((int)c).ToString("X4")));
-        return $"<${visible}>[{codePoints}]";
-    }
-
     private static List<string> GetEffectiveHeaderRow(List<List<string>> headerRows)
     {
         var lastNonEmptyHeader = headerRows.LastOrDefault(row => row.Any(cell => !string.IsNullOrWhiteSpace(cell)));
         return lastNonEmptyHeader?.ToList() ?? headerRows.Last().ToList();
     }
 
-    private static bool IsRepeatedHeaderRow(List<string> row, List<string> headerRow)
+    private static bool IsRepeatedHeaderRow(List<string> row, List<List<string>> normalizedHeaderRows)
     {
-        if (row.Count != headerRow.Count)
+        foreach (var headerRow in normalizedHeaderRows)
+        {
+            if (IsRowEqualToHeaderRow(row, headerRow))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static bool IsRowEqualToHeaderRow(List<string> row, List<string> headerRow)
+    {
+        var normalizedRow = GetNormalizedRow(row);
+
+        if (normalizedRow.Count != headerRow.Count)
         {
             return false;
         }
 
-        for (var index = 0; index < row.Count; index++)
+        for (var index = 0; index < normalizedRow.Count; index++)
         {
-            var rowValue = NormalizeCell(row[index]);
-            var headerValue = NormalizeCell(headerRow[index]);
+            var rowValue = normalizedRow[index];
+            var headerValue = headerRow[index];
 
             if (!string.Equals(rowValue, headerValue, StringComparison.OrdinalIgnoreCase))
             {
