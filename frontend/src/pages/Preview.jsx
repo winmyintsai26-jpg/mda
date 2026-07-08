@@ -29,42 +29,34 @@ const detectColumnType = (values) => {
     return 'text';
 };
 
-const calculateColumnWidth = (headerName, values, type = null) => {
+const calculateColumnWidth = (_headerName, values, type = null) => {
     const detectedType = type || detectColumnType(values);
-    
-    // Calculate width needed for header text
-    // Estimate ~8.5px per character at 14px font-size + padding for icons/resize
-    const headerText = String(headerName || '').trim();
-    const headerWidth = Math.max(
-        (headerText.length * 8.5) + 56,  // 56px for padding, icons, resize handle
-        70  // absolute minimum
-    );
-    
-    // Calculate width needed for longest data value
-    const maxValueLength = values.length > 0
-        ? Math.max(...values.map(v => String(v || '').length))
+
+    // Keep initial width driven by sampled data values.
+    const sampledValues = values.slice(0, 200);
+    const maxValueLength = sampledValues.length > 0
+        ? Math.max(...sampledValues.map(v => String(v ?? "").trim().length))
         : 0;
-    const dataWidth = (maxValueLength * 8) + 28;  // 28px for cell padding
-    
-    // Use the larger of header or data width, with type-specific limits
-    let width = Math.max(headerWidth, dataWidth);
-    
+    const dataWidth = (maxValueLength * 8) + 28;
+
+    // Type hint is secondary to data-driven sizing.
+    let width = Math.max(70, dataWidth);
     switch (detectedType) {
         case 'numeric':
-            width = Math.min(width, 200);
+            width = Math.min(Math.max(width, 70), 200);
             break;
         case 'date':
-            width = Math.max(140, Math.min(width, 200));
+            width = Math.max(140, Math.min(width, 220));
             break;
         case 'long-text':
-            width = Math.min(width, 450);
+            width = Math.min(Math.max(width, 120), 450);
             break;
         default:
-            width = Math.min(width, 350);
+            width = Math.min(Math.max(width, 70), 350);
             break;
     }
-    
-    return Math.max(width, 70);
+
+    return width;
 };
 
 const HeaderCell = memo(function HeaderCell({
@@ -121,7 +113,11 @@ const HeaderCell = memo(function HeaderCell({
                         onClick={(e) => e.stopPropagation()}
                     />
                 ) : (
-                    <div className="header-label" onDoubleClick={() => setIsEditing(true)}>
+                    <div
+                        className="header-label"
+                        onDoubleClick={() => setIsEditing(true)}
+                        title={header.name || "Untitled column"}
+                    >
                         {header.name || "Untitled column"}
                     </div>
                 )}
@@ -184,36 +180,6 @@ const DataCell = memo(function DataCell({ value, rowIndex, columnIndex, onCellCh
     );
 });
 
-const RowActionsCell = memo(function RowActionsCell({
-    rowIndex,
-    confirmRowId,
-    onDeleteRow,
-    onConfirmDelete,
-    onCancelDelete
-}) {
-    const handleConfirm = useCallback(() => onDeleteRow(rowIndex), [rowIndex, onDeleteRow]);
-    const handleDelete = useCallback(() => onConfirmDelete(rowIndex), [rowIndex, onConfirmDelete]);
-    
-    return (
-        <td className="row-actions-cell">
-            {confirmRowId === rowIndex ? (
-                <div className="confirm-actions">
-                    <button type="button" className="danger" onClick={handleConfirm}>
-                        Confirm
-                    </button>
-                    <button type="button" className="secondary" onClick={onCancelDelete}>
-                        Cancel
-                    </button>
-                </div>
-            ) : (
-                <button type="button" className="danger row-action-toggle" onClick={handleDelete}>
-                    🗑
-                </button>
-            )}
-        </td>
-    );
-});
-
 function Preview() {
     const {
         table,
@@ -228,13 +194,15 @@ function Preview() {
         setWorksheetTables
     } = useUpload();
 
-    const [confirmRowId, setConfirmRowId] = useState(null);
-    const [selectedRowIndex, setSelectedRowIndex] = useState(null);
+    const [selectedRowIndexes, setSelectedRowIndexes] = useState([]);
     const [history, setHistory] = useState({ past: [], future: [] });
     const [columnWidths, setColumnWidths] = useState({});
     const [draggedColumn, setDraggedColumn] = useState(null);
     const tableContainerRef = useRef(null);
     const topScrollRef = useRef(null);
+    const initializedWidthTableKeyRef = useRef(null);
+    const selectAllCheckboxRef = useRef(null);
+    const lastSelectedRowIndexRef = useRef(null);
 
     // Extract unique worksheets from analysisTables
     const worksheets = useMemo(() => {
@@ -275,11 +243,12 @@ function Preview() {
             setHistory(saved.history);
             setColumnWidths(saved.columnWidths);
             setSelectedTableIndex(saved.selectedTableIndex);
-            setConfirmRowId(null);
-            setSelectedRowIndex(null);
+            setSelectedRowIndexes([]);
+            lastSelectedRowIndexRef.current = null;
         } else {
             // Initialize new worksheet
-            const firstTable = worksheetFilteredTables[0];
+            const tablesForWorksheet = analysisTables.filter((candidate) => candidate.worksheetName === worksheetName);
+            const firstTable = tablesForWorksheet[0];
             if (firstTable) {
                 setTable({
                     headers: firstTable.headers,
@@ -289,8 +258,8 @@ function Preview() {
             }
             setHistory({ past: [], future: [] });
             setColumnWidths({});
-            setConfirmRowId(null);
-            setSelectedRowIndex(null);
+            setSelectedRowIndexes([]);
+            lastSelectedRowIndexRef.current = null;
         }
     }, [selectedWorksheet, table, history, columnWidths, selectedTableIndex, worksheetTables, worksheetFilteredTables, setWorksheetTables, setSelectedWorksheet, setTable, setHistory, setColumnWidths, setSelectedTableIndex]);
 
@@ -308,46 +277,53 @@ function Preview() {
 
     const displayTable = useMemo(() => {
         if (!table) {
-            console.log("[Preview] No table in state");
             return null;
         }
-
-        console.log("[Preview] Display table loaded:", {
-            headers: table.headers?.length || 0,
-            rows: table.rows?.length || 0,
-            firstRow: table.rows?.[0] || null
-        });
 
         return table;
     }, [table]);
 
-    // Calculate initial column widths based on content
-    const initialColumnWidths = useMemo(() => {
-        if (!displayTable) return {};
+    const activeTableWidthKey = useMemo(() => {
+        if (!selectedWorksheet) {
+            return null;
+        }
 
-        const widths = {};
-        displayTable.headers.forEach((header, index) => {
-            const columnValues = displayTable.rows.map(row => row[index]);
-            const type = detectColumnType(columnValues);
-            widths[header.id] = calculateColumnWidth(header.name, columnValues, type);
-        });
+        return `${selectedWorksheet}::${selectedTableIndex ?? 0}`;
+    }, [selectedWorksheet, selectedTableIndex]);
 
-        return widths;
-    }, [displayTable]);
-
-    // Update column widths when data changes
+    // Initialize widths once per selected table and only fill missing widths thereafter.
     useEffect(() => {
-        setColumnWidths(initialColumnWidths);
-    }, [initialColumnWidths]);
+        if (!displayTable || !activeTableWidthKey) {
+            return;
+        }
 
-    useEffect(() => {
-        console.log("[Preview] Page state:", {
-            fileName,
-            analysisTables: analysisTables.length,
-            selectedTableIndex,
-            displayTable: displayTable ? { headers: displayTable.headers?.length, rows: displayTable.rows?.length } : null
+        const hasCompleteWidths = displayTable.headers.every((header) => Number.isFinite(columnWidths[header.id]));
+        const tableChanged = initializedWidthTableKeyRef.current !== activeTableWidthKey;
+
+        if (tableChanged) {
+            initializedWidthTableKeyRef.current = activeTableWidthKey;
+        }
+
+        if (hasCompleteWidths) {
+            return;
+        }
+
+        setColumnWidths((previousWidths) => {
+            const nextWidths = { ...previousWidths };
+
+            displayTable.headers.forEach((header, index) => {
+                if (Number.isFinite(nextWidths[header.id])) {
+                    return;
+                }
+
+                const columnValues = displayTable.rows.map((row) => row[index]);
+                const type = detectColumnType(columnValues);
+                nextWidths[header.id] = calculateColumnWidth(header.name, columnValues, type);
+            });
+
+            return nextWidths;
         });
-    }, [fileName, analysisTables, selectedTableIndex, displayTable]);
+    }, [activeTableWidthKey, columnWidths, displayTable]);
 
     const applyPatch = useCallback((currentTable, patch) => {
         if (!currentTable) {
@@ -385,6 +361,14 @@ function Preview() {
                 return {
                     ...currentTable,
                     rows: currentTable.rows.filter((_, index) => index !== patch.rowIndex)
+                };
+            }
+            case "deleteRows": {
+                const selectedIndexSet = new Set(patch.rowIndexes);
+
+                return {
+                    ...currentTable,
+                    rows: currentTable.rows.filter((_, index) => !selectedIndexSet.has(index))
                 };
             }
             case "moveColumn": {
@@ -435,6 +419,19 @@ function Preview() {
             case "deleteRow": {
                 const nextRows = [...currentTable.rows];
                 nextRows.splice(patch.rowIndex, 0, patch.row);
+                return {
+                    ...currentTable,
+                    rows: nextRows
+                };
+            }
+            case "deleteRows": {
+                const nextRows = [...currentTable.rows];
+                const rowsToRestore = [...patch.rows].sort((a, b) => a.rowIndex - b.rowIndex);
+
+                rowsToRestore.forEach(({ rowIndex, row }) => {
+                    nextRows.splice(rowIndex, 0, row);
+                });
+
                 return {
                     ...currentTable,
                     rows: nextRows
@@ -533,31 +530,44 @@ function Preview() {
         });
     }, [commitChange, displayTable]);
 
-    const handleDeleteRow = useCallback((rowIndex) => {
-        if (!displayTable) return;
+    const handleDeleteSelectedRows = useCallback(() => {
+        if (!displayTable || selectedRowIndexes.length === 0) {
+            return;
+        }
 
-        const row = displayTable.rows[rowIndex];
-        if (!row) return;
+        const sortedIndexes = [...selectedRowIndexes]
+            .filter((index) => index >= 0 && index < displayTable.rows.length)
+            .sort((a, b) => a - b);
+
+        if (sortedIndexes.length === 0) {
+            return;
+        }
+
+        const confirmed = window.confirm(`Delete ${sortedIndexes.length} selected row${sortedIndexes.length > 1 ? "s" : ""}?`);
+        if (!confirmed) {
+            return;
+        }
+
+        const selectedIndexSet = new Set(sortedIndexes);
+        const deletedRows = sortedIndexes.map((rowIndex) => ({
+            rowIndex,
+            row: displayTable.rows[rowIndex]
+        }));
 
         const nextTable = {
             ...displayTable,
-            rows: displayTable.rows.filter((_, index) => index !== rowIndex)
+            rows: displayTable.rows.filter((_, index) => !selectedIndexSet.has(index))
         };
 
         commitChange(nextTable, {
-            type: "deleteRow",
-            rowIndex,
-            row
+            type: "deleteRows",
+            rowIndexes: sortedIndexes,
+            rows: deletedRows
         });
-        setConfirmRowId(null);
-        // Clear selected row if it was the deleted row
-        if (selectedRowIndex === rowIndex) {
-            setSelectedRowIndex(null);
-        } else if (selectedRowIndex > rowIndex) {
-            // Adjust selected row index if row before it was deleted
-            setSelectedRowIndex(selectedRowIndex - 1);
-        }
-    }, [commitChange, displayTable, selectedRowIndex]);
+
+        setSelectedRowIndexes([]);
+        lastSelectedRowIndexRef.current = null;
+    }, [commitChange, displayTable, selectedRowIndexes]);
 
     const handleMoveColumn = useCallback((fromIndex, toIndex) => {
         if (!displayTable || fromIndex === toIndex) return;
@@ -587,13 +597,49 @@ function Preview() {
         });
     }, [commitChange, displayTable]);
 
-    const handleConfirmDelete = useCallback((rowIndex) => {
-        setConfirmRowId(rowIndex);
-    }, []);
+    const handleRowSelectionChange = useCallback((rowIndex, checked, shiftKey) => {
+        if (!displayTable) {
+            return;
+        }
 
-    const handleCancelDelete = useCallback(() => {
-        setConfirmRowId(null);
-    }, []);
+        setSelectedRowIndexes((current) => {
+            const currentSet = new Set(current);
+
+            if (shiftKey && lastSelectedRowIndexRef.current != null) {
+                const start = Math.min(lastSelectedRowIndexRef.current, rowIndex);
+                const end = Math.max(lastSelectedRowIndexRef.current, rowIndex);
+
+                for (let index = start; index <= end; index += 1) {
+                    if (checked) {
+                        currentSet.add(index);
+                    } else {
+                        currentSet.delete(index);
+                    }
+                }
+            } else if (checked) {
+                currentSet.add(rowIndex);
+            } else {
+                currentSet.delete(rowIndex);
+            }
+
+            return [...currentSet].sort((a, b) => a - b);
+        });
+
+        lastSelectedRowIndexRef.current = rowIndex;
+    }, [displayTable]);
+
+    const handleToggleSelectAll = useCallback((checked) => {
+        if (!displayTable) {
+            return;
+        }
+
+        if (checked) {
+            setSelectedRowIndexes(displayTable.rows.map((_, index) => index));
+            return;
+        }
+
+        setSelectedRowIndexes([]);
+    }, [displayTable]);
 
     const handleUndo = useCallback(() => {
         if (!displayTable || history.past.length === 0) return;
@@ -606,6 +652,8 @@ function Preview() {
             future: [patch, ...current.future].slice(0, 50)
         }));
         setTable(previousTable);
+            setSelectedRowIndexes([]);
+            lastSelectedRowIndexRef.current = null;
     }, [applyInversePatch, displayTable, history.past, setTable]);
 
     const handleRedo = useCallback(() => {
@@ -619,7 +667,41 @@ function Preview() {
             future: current.future.slice(1)
         }));
         setTable(nextTable);
+        setSelectedRowIndexes([]);
+        lastSelectedRowIndexRef.current = null;
     }, [applyPatch, displayTable, history.future, setTable]);
+
+    useEffect(() => {
+        if (!displayTable) {
+            setSelectedRowIndexes([]);
+            lastSelectedRowIndexRef.current = null;
+            return;
+        }
+
+        setSelectedRowIndexes((current) => current.filter((index) => index >= 0 && index < displayTable.rows.length));
+    }, [displayTable]);
+
+    const allRowsSelected = useMemo(() => {
+        if (!displayTable || displayTable.rows.length === 0) {
+            return false;
+        }
+
+        return selectedRowIndexes.length === displayTable.rows.length;
+    }, [displayTable, selectedRowIndexes]);
+
+    const selectedRowIndexSet = useMemo(() => new Set(selectedRowIndexes), [selectedRowIndexes]);
+
+    const hasSomeRowsSelected = useMemo(() => {
+        return selectedRowIndexes.length > 0 && !allRowsSelected;
+    }, [allRowsSelected, selectedRowIndexes]);
+
+    useEffect(() => {
+        if (!selectAllCheckboxRef.current) {
+            return;
+        }
+
+        selectAllCheckboxRef.current.indeterminate = hasSomeRowsSelected;
+    }, [hasSomeRowsSelected]);
 
     useEffect(() => {
         const handleKeyDown = (event) => {
@@ -704,29 +786,17 @@ function Preview() {
         }
     }, []);
 
-    useEffect(() => {
-        console.log("[Preview] Page state:", {
-            fileName,
-            analysisTables: analysisTables.length,
-            selectedTableIndex,
-            displayTable: displayTable ? { headers: displayTable.headers?.length, rows: displayTable.rows?.length } : null
-        });
-    }, [fileName, analysisTables, selectedTableIndex, displayTable]);
-
     const tableStats = useMemo(() => {
         if (!displayTable) {
             return null;
         }
 
-        const stats = {
+        return {
             rowCount: displayTable.rows?.length || 0,
             columnCount: displayTable.headers?.length || 0,
             validationStatus: selectedAnalysisTable?.validation?.isValid ? "Valid" : "Needs review",
             confidence: selectedAnalysisTable?.validation?.confidence ?? 0
         };
-        
-        console.log("[Preview] Table stats:", stats);
-        return stats;
     }, [displayTable, selectedAnalysisTable]);
 
     if (!displayTable || displayTable.headers.length === 0) {
@@ -804,6 +874,22 @@ function Preview() {
                         <h2>{selectedAnalysisTable?.title || "Detected Table"}</h2>
                     </div>
                     <div className="toolbar-actions">
+                        <label className="select-all-control">
+                            <input
+                                type="checkbox"
+                                checked={allRowsSelected}
+                                onChange={(event) => handleToggleSelectAll(event.target.checked)}
+                            />
+                            <span>Select All</span>
+                        </label>
+                        <button
+                            type="button"
+                            className="secondary"
+                            onClick={handleDeleteSelectedRows}
+                            disabled={selectedRowIndexes.length === 0}
+                        >
+                            Delete Selected
+                        </button>
                         <button type="button" className="secondary" onClick={handleUndo} disabled={history.past.length === 0}>
                             ↶ Undo
                         </button>
@@ -831,6 +917,15 @@ function Preview() {
                     <table className="spreadsheet-table">
                         <thead>
                             <tr>
+                                <th className="selection-header-cell">
+                                    <input
+                                        ref={selectAllCheckboxRef}
+                                        type="checkbox"
+                                        checked={allRowsSelected}
+                                        onChange={(event) => handleToggleSelectAll(event.target.checked)}
+                                        aria-label="Select all rows"
+                                    />
+                                </th>
                                 {displayTable.headers.map((header, index) => (
                                     <HeaderCell
                                         key={header.id}
@@ -845,16 +940,22 @@ function Preview() {
                                         onAutoFit={handleAutoFit}
                                     />
                                 ))}
-                                <th style={{ width: "180px" }} className="actions-header" />
                             </tr>
                         </thead>
                         <tbody>
                             {displayTable.rows.map((row, rowIndex) => (
                                 <tr
                                     key={rowIndex}
-                                    className={selectedRowIndex === rowIndex ? "is-selected" : ""}
-                                    onClick={() => setSelectedRowIndex(rowIndex)}
+                                    className={selectedRowIndexSet.has(rowIndex) ? "is-selected" : ""}
                                 >
+                                    <td className="selection-cell">
+                                        <input
+                                            type="checkbox"
+                                            checked={selectedRowIndexSet.has(rowIndex)}
+                                            onChange={(event) => handleRowSelectionChange(rowIndex, event.target.checked, event.nativeEvent.shiftKey)}
+                                            aria-label={`Select row ${rowIndex + 1}`}
+                                        />
+                                    </td>
                                     {row.map((cell, cellIndex) => (
                                         <DataCell
                                             key={`${rowIndex}-${displayTable.headers[cellIndex]?.id || cellIndex}`}
@@ -865,13 +966,6 @@ function Preview() {
                                             onCellChange={handleCellChange}
                                         />
                                     ))}
-                                    <RowActionsCell
-                                        rowIndex={rowIndex}
-                                        confirmRowId={confirmRowId}
-                                        onDeleteRow={handleDeleteRow}
-                                        onConfirmDelete={handleConfirmDelete}
-                                        onCancelDelete={handleCancelDelete}
-                                    />
                                 </tr>
                             ))}
                         </tbody>

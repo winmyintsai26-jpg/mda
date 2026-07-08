@@ -43,7 +43,6 @@ function Dashboard() {
 
         try {
             setIsAnalyzing(true);
-            console.log("[Dashboard] Sending /analyze request");
 
             const response = await fetch("http://localhost:5176/analyze", {
                 method: "POST",
@@ -57,18 +56,8 @@ function Dashboard() {
             }
 
             const data = await response.json();
-            console.log("[Dashboard] /analyze response received:", {
-                worksheetCount: data?.worksheets?.length || 0,
-                firstWorksheet: data?.worksheets?.[0]?.sheetName || "N/A",
-                firstRegionRowCount: data?.worksheets?.[0]?.candidateRegions?.[0]?.rows?.length || 0
-            });
 
             const previewTables = createPreviewTablesFromAnalysis(data);
-            console.log("[Dashboard] Preview tables created:", {
-                count: previewTables.length,
-                firstTableRows: previewTables[0]?.rows?.length || 0,
-                firstTableHeaders: previewTables[0]?.headers?.length || 0
-            });
 
             setAnalysisResult(data);
             setAnalysisTables(previewTables);
@@ -85,20 +74,14 @@ function Dashboard() {
 
             if (previewTables.length > 0) {
                 const firstTable = previewTables[0];
-                console.log("[Dashboard] Setting first table in state:", {
-                    headers: firstTable.headers?.length || 0,
-                    rows: firstTable.rows?.length || 0
-                });
                 setTable({
                     headers: firstTable.headers,
                     rows: firstTable.rows
                 });
             } else {
-                console.log("[Dashboard] No preview tables, setting empty table");
                 setTable({ headers: [], rows: [] });
             }
 
-            console.log("[Dashboard] Navigating to /preview");
             navigate("/preview");
         } catch (err) {
             console.error("[Dashboard] Error during analysis:", err);
