@@ -75,11 +75,12 @@ function Dashboard() {
             if (previewTables.length > 0) {
                 const firstTable = previewTables[0];
                 setTable({
+                    title: firstTable.title,
                     headers: firstTable.headers,
                     rows: firstTable.rows
                 });
             } else {
-                setTable({ headers: [], rows: [] });
+                setTable({ title: "", headers: [], rows: [] });
             }
 
             navigate("/preview");

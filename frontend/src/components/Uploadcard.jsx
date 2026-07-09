@@ -88,7 +88,10 @@ function UploadCard({
                         onClick={onAnalyze}
                         disabled={isAnalyzing}
                     >
-                        {isAnalyzing ? "Analyzing..." : "Analyze Workbook"}
+                        <span className="button-content">
+                            {isAnalyzing && <span className="button-spinner" aria-hidden="true" />}
+                            <span>{isAnalyzing ? "Analyzing..." : "Analyze Workbook"}</span>
+                        </span>
                     </button>
                 </div>
             )}

@@ -149,17 +149,56 @@ function parseDateParts(rawValue) {
     };
 }
 
-function normalizeDateValue(value, dataType) {
-    const trimmed = String(value ?? "").trim();
-    if (!trimmed) {
-        return "";
+function parseDotSeparatedDateParts(trimmed) {
+    // Matches DD.MM.YYYY[ HH:mm[:ss] [AM|PM]].
+    const dotSeparatedMatch = trimmed.match(/^(\d{1,2})\.(\d{1,2})\.(\d{2,4})(?:\s+(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(AM|PM)?)?$/i);
+    if (!dotSeparatedMatch) {
+        return null;
     }
 
-    const parsed = parseDateParts(trimmed);
-    if (!parsed) {
-        return trimmed;
+    const day = Number(dotSeparatedMatch[1]);
+    const month = Number(dotSeparatedMatch[2]);
+    const year = parseYear(dotSeparatedMatch[3]);
+
+    if (!isValidDateParts(year, month, day)) {
+        return null;
     }
 
+    const hasTime = Boolean(dotSeparatedMatch[4]);
+    let hour = hasTime ? Number(dotSeparatedMatch[4]) : 0;
+    const minute = hasTime ? Number(dotSeparatedMatch[5]) : 0;
+    const second = hasTime ? Number(dotSeparatedMatch[6] ?? 0) : 0;
+    const meridiem = dotSeparatedMatch[7]?.toUpperCase();
+
+    if (meridiem === "AM") {
+        if (hour === 12) {
+            hour = 0;
+        }
+    } else if (meridiem === "PM") {
+        if (hour < 12) {
+            hour += 12;
+        }
+    }
+
+    return { year, month, day, hour, minute, second, hasTime };
+}
+
+const DATE_EXTENSION_RULES = [
+    parseDotSeparatedDateParts
+];
+
+function parseDatePartsFromExtensions(trimmed) {
+    for (const parseRule of DATE_EXTENSION_RULES) {
+        const parsed = parseRule(trimmed);
+        if (parsed) {
+            return parsed;
+        }
+    }
+
+    return null;
+}
+
+function formatNormalizedDate(parsed, dataType) {
     const datePortion = `${parsed.year}-${pad2(parsed.month)}-${pad2(parsed.day)}`;
     const shouldIncludeTime = dataType === "datetime" && parsed.hasTime;
 
@@ -171,6 +210,27 @@ function normalizeDateValue(value, dataType) {
     return `${datePortion} ${timePortion}`;
 }
 
+function normalizeDateValueWithMeta(value, dataType) {
+    const trimmed = String(value ?? "").trim();
+    if (!trimmed) {
+        return { value: "", isValidDate: true };
+    }
+
+    const parsed = parseDateParts(trimmed) ?? parseDatePartsFromExtensions(trimmed);
+    if (!parsed) {
+        return { value: trimmed, isValidDate: false };
+    }
+
+    return {
+        value: formatNormalizedDate(parsed, dataType),
+        isValidDate: true
+    };
+}
+
+function normalizeDateValue(value, dataType) {
+    return normalizeDateValueWithMeta(value, dataType).value;
+}
+
 function normalizeBooleanValue(value) {
     const trimmed = String(value ?? "").trim();
     if (!trimmed) {
@@ -178,21 +238,101 @@ function normalizeBooleanValue(value) {
     }
 
     const upper = trimmed.toUpperCase();
-    if (["TRUE", "YES", "Y", "1"].includes(upper)) {
+    if (["TRUE", "YES", "1"].includes(upper)) {
         return "True";
     }
 
-    if (["FALSE", "NO", "N", "0"].includes(upper)) {
+    if (["FALSE", "NO", "0"].includes(upper)) {
         return "False";
     }
 
     return trimmed;
 }
 
+function parseFormattedNumericParts(value) {
+    const match = String(value ?? "").match(/^([+-]?)(\d{1,3}(?:,\d{3})+|\d+)(?:\.(\d+))?$/);
+    if (!match) {
+        return null;
+    }
+
+    return {
+        sign: match[1] ?? "",
+        integerPart: (match[2] ?? "").replace(/,/g, ""),
+        fractionalPart: match[3]
+    };
+}
+
+function formatNumericParts(sign, integerPart, fractionalPart) {
+    if (fractionalPart == null) {
+        return `${sign}${integerPart}`;
+    }
+
+    return `${sign}${integerPart}.${fractionalPart}`;
+}
+
+function normalizeThousandsSeparatedNumber(value) {
+    const trimmed = String(value ?? "").trim();
+    if (!trimmed) {
+        return null;
+    }
+
+    // Matches correctly grouped thousands values like 1,234 or 1,234.56.
+    if (!trimmed.includes(",")) {
+        return null;
+    }
+
+    const parsed = parseFormattedNumericParts(trimmed);
+    if (!parsed || !parsed.integerPart) {
+        return null;
+    }
+
+    return formatNumericParts(parsed.sign, parsed.integerPart, parsed.fractionalPart);
+}
+
+function normalizeAccountingNegativeNumber(value) {
+    const trimmed = String(value ?? "").trim();
+    if (!trimmed.startsWith("(") || !trimmed.endsWith(")")) {
+        return null;
+    }
+
+    const innerValue = trimmed.slice(1, -1).trim();
+    if (!innerValue || innerValue.startsWith("+") || innerValue.startsWith("-")) {
+        return null;
+    }
+
+    const parsed = parseFormattedNumericParts(innerValue);
+    if (!parsed || parsed.sign || !parsed.integerPart) {
+        return null;
+    }
+
+    return formatNumericParts("-", parsed.integerPart, parsed.fractionalPart);
+}
+
+const NUMERIC_EXTENSION_RULES = [
+    normalizeAccountingNegativeNumber,
+    normalizeThousandsSeparatedNumber
+];
+
+function normalizeNumericValueWithExtensions(value) {
+    for (const normalizeRule of NUMERIC_EXTENSION_RULES) {
+        const normalized = normalizeRule(value);
+        if (normalized != null) {
+            return normalized;
+        }
+    }
+
+    return null;
+}
+
 function normalizeNumericValue(value) {
     const trimmed = String(value ?? "").trim();
     if (!trimmed) {
         return "";
+    }
+
+    const extensionNormalized = normalizeNumericValueWithExtensions(trimmed);
+    if (extensionNormalized != null) {
+        return extensionNormalized;
     }
 
     const basicNumberMatch = trimmed.match(/^([+-]?)(\d+)(?:\.(\d+))?$/);
@@ -218,22 +358,39 @@ function normalizeNumericValue(value) {
     return `${sign}${integerPart}.${fractionalPart}`;
 }
 
-function normalizePreviewCell(value, dataType) {
+export function normalizePreviewValue(value, dataType) {
     const normalizedType = String(dataType ?? "").trim().toLowerCase();
 
     if (normalizedType === "datetime" || normalizedType === "date") {
-        return normalizeDateValue(value, normalizedType);
+        const dateResult = normalizeDateValueWithMeta(value, normalizedType);
+        return {
+            value: dateResult.value,
+            isDateInvalid: !dateResult.isValidDate
+        };
     }
 
     if (normalizedType === "boolean") {
-        return normalizeBooleanValue(value);
+        return {
+            value: normalizeBooleanValue(value),
+            isDateInvalid: false
+        };
     }
 
-    if (normalizedType === "numeric") {
-        return normalizeNumericValue(value);
+    if (normalizedType === "numeric" || normalizedType === "number") {
+        return {
+            value: normalizeNumericValue(value),
+            isDateInvalid: false
+        };
     }
 
-    return String(value ?? "").trim();
+    return {
+        value: String(value ?? "").trim(),
+        isDateInvalid: false
+    };
+}
+
+function normalizePreviewCell(value, dataType) {
+    return normalizePreviewValue(value, dataType).value;
 }
 
 function normalizeRows(rows, region) {
@@ -269,13 +426,25 @@ export function createPreviewTablesFromAnalysis(analysisResult) {
         return regions.map((region, regionIndex) => {
             const rawRows = Array.isArray(region?.rows) ? region.rows.map((row) => [...(Array.isArray(row) ? row : [])]) : [];
             const rows = normalizeRows(rawRows, region);
+            const columns = Array.isArray(region?.columns) ? region.columns : [];
+            const typeByIndex = new Map(
+                columns.map((column) => [column?.index, column?.type?.dataType ?? "Text"])
+            );
             const headerRows = Array.isArray(region?.headerDetectionResult?.winningHeader?.headerCells)
                 ? region.headerDetectionResult.winningHeader.headerCells
                 : [];
             const headerRow = headerRows.length > 0 ? headerRows[headerRows.length - 1] : [];
             const headers = Array.isArray(headerRow) && headerRow.length > 0
-                ? headerRow.map((name, index) => ({ id: `${worksheetIndex}-${regionIndex}-col-${index}`, name: name ?? "" }))
-                : rows[0]?.map((_, index) => ({ id: `${worksheetIndex}-${regionIndex}-col-${index}`, name: `Column ${index + 1}` })) || [];
+                ? headerRow.map((name, index) => ({
+                    id: `${worksheetIndex}-${regionIndex}-col-${index}`,
+                    name: name ?? "",
+                    dataType: typeByIndex.get(index) ?? "Text"
+                }))
+                : rows[0]?.map((_, index) => ({
+                    id: `${worksheetIndex}-${regionIndex}-col-${index}`,
+                    name: `Column ${index + 1}`,
+                    dataType: typeByIndex.get(index) ?? "Text"
+                })) || [];
 
             return {
                 id: `${worksheetIndex}-${regionIndex}`,

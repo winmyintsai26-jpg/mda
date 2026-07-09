@@ -1,4 +1,5 @@
 using ClosedXML.Excel;
+using MDA.API.Database;
 using MDA.API.WorkbookAnalysis;
 using MDA.API.WorkbookAnalysis.Columns;
 using MDA.API.WorkbookAnalysis.DataTypes;
@@ -19,6 +20,10 @@ builder.Services.AddCors(options =>
               .AllowAnyMethod();
     });
 });
+
+builder.Services.AddScoped<MySqlConnectionService>();
+builder.Services.AddScoped<MySqlSchemaService>();
+builder.Services.AddScoped<MySqlImportService>();
 
 var app = builder.Build();
 
@@ -99,4 +104,63 @@ app.MapPost("/analyze", async (IFormFile file) =>
 })
 
 .DisableAntiforgery();
+
+app.MapPost("/database/mysql/test-connection", async (MySqlConnectionRequest request, MySqlConnectionService connectionService, CancellationToken cancellationToken) =>
+{
+    var result = await connectionService.TestConnectionAsync(request, cancellationToken);
+    return result.Success ? Results.Ok(result) : Results.BadRequest(result);
+});
+
+app.MapPost("/database/mysql/databases", async (MySqlConnectionRequest request, MySqlSchemaService schemaService, CancellationToken cancellationToken) =>
+{
+    try
+    {
+        var databases = await schemaService.ListDatabasesAsync(request, cancellationToken);
+        return Results.Ok(databases);
+    }
+    catch (Exception ex)
+    {
+        return Results.BadRequest(new { message = ex.Message });
+    }
+});
+
+app.MapPost("/database/mysql/tables", async (MySqlDatabaseRequest request, MySqlSchemaService schemaService, CancellationToken cancellationToken) =>
+{
+    try
+    {
+        var tables = await schemaService.ListTablesAsync(request, cancellationToken);
+        return Results.Ok(tables);
+    }
+    catch (Exception ex)
+    {
+        return Results.BadRequest(new { message = ex.Message });
+    }
+});
+
+app.MapPost("/database/mysql/schema", async (MySqlTableRequest request, MySqlSchemaService schemaService, CancellationToken cancellationToken) =>
+{
+    try
+    {
+        var columns = await schemaService.GetTableSchemaAsync(request, cancellationToken);
+        return Results.Ok(columns);
+    }
+    catch (Exception ex)
+    {
+        return Results.BadRequest(new { message = ex.Message });
+    }
+});
+
+app.MapPost("/database/mysql/import", async (MySqlImportRequest request, MySqlImportService importService, CancellationToken cancellationToken) =>
+{
+    try
+    {
+        var result = await importService.ImportAsync(request, cancellationToken);
+        return Results.Ok(result);
+    }
+    catch (Exception ex)
+    {
+        return Results.BadRequest(new { message = ex.Message });
+    }
+});
+
 app.Run();
