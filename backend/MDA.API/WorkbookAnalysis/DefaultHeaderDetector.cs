@@ -6,21 +6,25 @@ namespace MDA.API.WorkbookAnalysis;
 
 public class DefaultHeaderDetector : IHeaderDetector
 {
-    private const int MaxHeaderRows = 3;
-    private const int HeaderSearchDepth = 8;
+    private readonly WorkbookAnalysisOptions _options;
     private static readonly Regex NoteLikeText = new(@"\b(note|remarks|comments|summary|description)\b", RegexOptions.IgnoreCase | RegexOptions.Compiled);
     private static readonly Regex SentenceLikeText = new(@"[.!?].{10,}", RegexOptions.Compiled);
     private static readonly Regex DatePattern = new(@"\b\d{1,2}[/-]\d{1,2}[/-]\d{2,4}\b", RegexOptions.Compiled);
 
+    public DefaultHeaderDetector(WorkbookAnalysisOptions options)
+    {
+        _options = options;
+    }
+
     public HeaderDetectionResult Detect(WorksheetScanResult scanResult, CandidateRegion region)
     {
         var result = new HeaderDetectionResult();
-        var regionRows = ExtractRegionRows(scanResult.CellValues, region);
-        var maxStart = Math.Min(regionRows.Count - 1, HeaderSearchDepth - 1);
+        var regionRows = RegionRows.Extract(scanResult.CellValues, region);
+        var maxStart = Math.Min(regionRows.Count - 1, _options.HeaderSearchDepth - 1);
 
         for (var startRow = 0; startRow <= maxStart; startRow++)
         {
-            for (var headerRowCount = 1; headerRowCount <= MaxHeaderRows; headerRowCount++)
+            for (var headerRowCount = 1; headerRowCount <= _options.MaxHeaderRows; headerRowCount++)
             {
                 if (startRow + headerRowCount > regionRows.Count)
                 {
@@ -73,25 +77,6 @@ public class DefaultHeaderDetector : IHeaderDetector
         candidate.Reasons = BuildReasons(candidate, penalty);
 
         return candidate;
-    }
-
-    private static List<List<string>> ExtractRegionRows(List<List<string>> values, CandidateRegion region)
-    {
-        var rows = new List<List<string>>();
-
-        for (var rowIndex = region.StartRow - 1; rowIndex < region.EndRow; rowIndex++)
-        {
-            var row = new List<string>();
-
-            for (var columnIndex = region.StartColumn - 1; columnIndex < region.EndColumn; columnIndex++)
-            {
-                row.Add(values[rowIndex][columnIndex]);
-            }
-
-            rows.Add(row);
-        }
-
-        return rows;
     }
 
     private int ComputeDensityScore(List<List<string>> headerRows)

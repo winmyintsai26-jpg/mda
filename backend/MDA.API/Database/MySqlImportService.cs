@@ -27,44 +27,15 @@ public sealed class MySqlImportService
 
         var schema = await _schemaService.GetTableSchemaAsync(request, cancellationToken);
 
-        // Build schema dictionary using normalized keys so formatting differences
-        // between preview headers and DB columns do not block a valid match.
-        var schemaByNormalizedName = new Dictionary<string, MySqlSchemaColumn>(StringComparer.Ordinal);
-        foreach (var column in schema)
-        {
-            var normalizedColumnName = HeaderNormalizer.Normalize(column.ColumnName);
-            if (!string.IsNullOrEmpty(normalizedColumnName) && !schemaByNormalizedName.ContainsKey(normalizedColumnName))
-            {
-                schemaByNormalizedName[normalizedColumnName] = column;
-            }
-        }
-
-        var matchedColumns = new List<(string PreviewHeader, MySqlSchemaColumn SchemaColumn, int Index)>();
-        var ignoredPreviewColumns = new List<string>();
-
-        for (var index = 0; index < request.Headers.Count; index++)
-        {
-            var previewHeader = request.Headers[index]?.Trim() ?? string.Empty;
-            if (string.IsNullOrWhiteSpace(previewHeader))
-            {
-                ignoredPreviewColumns.Add(previewHeader);
-                continue;
-            }
-
-            var normalizedPreviewHeader = HeaderNormalizer.Normalize(previewHeader);
-            if (!string.IsNullOrEmpty(normalizedPreviewHeader)
-                && schemaByNormalizedName.TryGetValue(normalizedPreviewHeader, out var schemaColumn))
-            {
-                matchedColumns.Add((previewHeader, schemaColumn, index));
-                continue;
-            }
-
-            ignoredPreviewColumns.Add(previewHeader);
-        }
+        // Preflight validation happens before opening a connection/transaction.
+        // This guarantees required/mapping errors fail fast and never execute SQL.
+        var importPlan = MySqlImportPreflightValidator.BuildImportPlan(request.Headers, schema);
+        var matchedColumns = importPlan.MatchedColumns;
+        var ignoredPreviewColumns = importPlan.IgnoredPreviewColumns;
 
         if (matchedColumns.Count == 0)
         {
-            throw new InvalidOperationException("No preview columns match the selected MySQL table schema.");
+            throw new MySqlImportValidationException("No preview columns match the selected MySQL table schema.");
         }
 
         var escapedTableName = EscapeIdentifier(request.Table);

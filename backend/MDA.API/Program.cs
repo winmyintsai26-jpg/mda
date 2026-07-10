@@ -3,6 +3,7 @@ using MDA.API.Database;
 using MDA.API.WorkbookAnalysis;
 using MDA.API.WorkbookAnalysis.Columns;
 using MDA.API.WorkbookAnalysis.DataTypes;
+using MDA.API.WorkbookAnalysis.Pipeline;
 using MDA.API.WorkbookAnalysis.Validation;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -24,6 +25,25 @@ builder.Services.AddCors(options =>
 builder.Services.AddScoped<MySqlConnectionService>();
 builder.Services.AddScoped<MySqlSchemaService>();
 builder.Services.AddScoped<MySqlImportService>();
+
+builder.Services.AddScoped<IWorkbookLoader, DefaultWorkbookLoader>();
+builder.Services.AddScoped<WorksheetScanner>();
+builder.Services.AddScoped<IRegionDetector, DefaultRegionDetector>();
+builder.Services.AddScoped<IHeaderDetector, DefaultHeaderDetector>();
+builder.Services.AddScoped<ITableClassifier, DefaultTableClassifier>();
+builder.Services.AddScoped<ITableValidator, TableValidator>();
+builder.Services.AddScoped<IColumnDetector, DefaultColumnDetector>();
+builder.Services.AddScoped<IDataTypeDetector, DefaultDataTypeDetector>();
+builder.Services.AddScoped<WorkbookAnalysisOptions>();
+builder.Services.AddScoped<IWorkbookAnalysisStage, WorkbookScannerStage>();
+builder.Services.AddScoped<IWorkbookAnalysisStage, RegionDetectionStage>();
+builder.Services.AddScoped<IWorkbookAnalysisStage, HeaderDetectionStage>();
+builder.Services.AddScoped<IWorkbookAnalysisStage, TableClassificationStage>();
+builder.Services.AddScoped<IWorkbookAnalysisStage, TableValidationStage>();
+builder.Services.AddScoped<IWorkbookAnalysisStage, ColumnDetectionStage>();
+builder.Services.AddScoped<IWorkbookAnalysisStage, DataTypeDetectionStage>();
+builder.Services.AddScoped<IWorkbookAnalysisStage, WorksheetProjectionStage>();
+builder.Services.AddScoped<WorkbookAnalyzer>();
 
 var app = builder.Build();
 
@@ -70,7 +90,7 @@ app.MapPost("/upload", async (IFormFile file) =>
 })
 .DisableAntiforgery();
 
-app.MapPost("/analyze", async (IFormFile file) =>
+app.MapPost("/analyze", async (IFormFile file, IWorkbookLoader loader, WorkbookAnalyzer analyzer) =>
 {
     if (file == null || file.Length == 0)
     {
@@ -81,22 +101,11 @@ app.MapPost("/analyze", async (IFormFile file) =>
     await file.CopyToAsync(stream);
     stream.Position = 0;
 
-    var loader = new DefaultWorkbookLoader();
     var loadResult = await loader.LoadAsync(stream, file.FileName);
     if (!loadResult.Success || loadResult.Workbook == null)
     {
         return Results.BadRequest(loadResult.ErrorMessage);
     }
-
-    var analyzer = new WorkbookAnalyzer(
-        new WorksheetScanner(),
-        new DefaultRegionDetector(),
-        new DefaultHeaderDetector(),
-        new DefaultTableClassifier(),
-        new TableValidator(),
-        new DefaultColumnDetector(),
-        new DefaultDataTypeDetector(),
-        new WorkbookAnalysisOptions());
 
     var analysisResult = analyzer.Analyze(loadResult.Workbook);
 
@@ -157,9 +166,14 @@ app.MapPost("/database/mysql/import", async (MySqlImportRequest request, MySqlIm
         var result = await importService.ImportAsync(request, cancellationToken);
         return Results.Ok(result);
     }
-    catch (Exception ex)
+    catch (MySqlImportValidationException ex)
     {
         return Results.BadRequest(new { message = ex.Message });
+    }
+    catch (Exception ex)
+    {
+        Console.Error.WriteLine($"[MySQL Import] Unexpected error: {ex.Message}");
+        return Results.BadRequest(new { message = "Import failed due to an unexpected server error. Verify table access and source data, then try again." });
     }
 });
 

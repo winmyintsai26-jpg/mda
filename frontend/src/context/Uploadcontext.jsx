@@ -1,4 +1,4 @@
-import { createContext, useContext, useState } from "react";
+import { createContext, useContext, useMemo, useState } from "react";
 
 const UploadContext = createContext();
 
@@ -11,24 +11,34 @@ export function UploadProvider({ children }) {
     const [selectedWorksheet, setSelectedWorksheet] = useState(null);
     const [worksheetTables, setWorksheetTables] = useState({});  // Store edits per worksheet
 
+    const contextValue = useMemo(() => ({
+        table,
+        setTable,
+        fileName,
+        setFileName,
+        analysisTables,
+        setAnalysisTables,
+        selectedTableIndex,
+        setSelectedTableIndex,
+        analysisResult,
+        setAnalysisResult,
+        selectedWorksheet,
+        setSelectedWorksheet,
+        worksheetTables,
+        setWorksheetTables
+    }), [
+        table,
+        fileName,
+        analysisTables,
+        selectedTableIndex,
+        analysisResult,
+        selectedWorksheet,
+        worksheetTables
+    ]);
+
     return (
         <UploadContext.Provider
-            value={{
-                table,
-                setTable,
-                fileName,
-                setFileName,
-                analysisTables,
-                setAnalysisTables,
-                selectedTableIndex,
-                setSelectedTableIndex,
-                analysisResult,
-                setAnalysisResult,
-                selectedWorksheet,
-                setSelectedWorksheet,
-                worksheetTables,
-                setWorksheetTables
-            }}
+            value={contextValue}
         >
             {children}
         </UploadContext.Provider>

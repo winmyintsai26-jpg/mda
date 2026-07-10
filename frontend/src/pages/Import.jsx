@@ -2,8 +2,7 @@ import { useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useUpload } from "../context/UploadContext";
 import { normalizeHeader } from "../utils/headerNormalizer";
-
-const API_BASE_URL = "http://localhost:5176";
+import { API_BASE_URL } from "../config/api";
 
 function Import() {
     const navigate = useNavigate();
@@ -62,6 +61,34 @@ function Import() {
     }, [analysisTables, selectedTableIndex, selectedWorksheet]);
 
     const previewHeaders = useMemo(() => table?.headers?.map((header) => header.name?.trim() || "") || [], [table]);
+
+    const previewHeaderCollisions = useMemo(() => {
+        const groups = new Map();
+
+        previewHeaders.forEach((header, index) => {
+            if (!header) {
+                return;
+            }
+
+            const normalized = normalizeHeader(header);
+            if (!normalized) {
+                return;
+            }
+
+            if (!groups.has(normalized)) {
+                groups.set(normalized, []);
+            }
+
+            groups.get(normalized).push({ header, index: index + 1 });
+        });
+
+        return [...groups.entries()]
+            .filter(([, entries]) => entries.length > 1)
+            .map(([normalized, entries]) => ({
+                normalized,
+                entries
+            }));
+    }, [previewHeaders]);
 
     const comparison = useMemo(() => {
         // Compare normalized header keys so spacing/punctuation/case differences
@@ -439,12 +466,19 @@ function Import() {
                     <div className="import-card">
                         <h2>Import</h2>
                         <p className="import-help-text">Only columns that exist in both the edited Preview table and the selected MySQL table will be included in INSERT statements.</p>
+                        {previewHeaderCollisions.length > 0 && (
+                            <p className="import-message error">
+                                Import is blocked because some Preview headers normalize to the same value. Resolve these collisions first: {previewHeaderCollisions
+                                    .map((collision) => `${collision.normalized} (${collision.entries.map((entry) => `'${entry.header}' col ${entry.index}`).join(", ")})`)
+                                    .join(" | ")}
+                            </p>
+                        )}
                         <div className="import-actions-row">
                             <button
                                 type="button"
                                 className="primary"
                                 onClick={handleImport}
-                                disabled={isImporting || comparison.matchedColumns.length === 0}
+                                disabled={isImporting || comparison.matchedColumns.length === 0 || previewHeaderCollisions.length > 0}
                             >
                                 <span className="button-content">
                                     {isImporting && <span className="button-spinner" aria-hidden="true" />}

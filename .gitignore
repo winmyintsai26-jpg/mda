@@ -1,7 +1,13 @@
 bin/
 obj/
+**/bin/
+**/obj/
 .vs/
 node_modules/
+
+# Backend generated build output and validation artifacts
+backend/MDA.API/temp/
+backend/MDA.API/temp/**
 
 .env
 
@@ -10,4 +16,4 @@ node_modules/
 
 .vscode/settings.json
 
-*.loggit add .
+*.log

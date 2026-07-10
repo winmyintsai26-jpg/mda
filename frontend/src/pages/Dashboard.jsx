@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import UploadCard from "../components/UploadCard";
 import { useUpload } from "../context/UploadContext";
 import { createPreviewTablesFromAnalysis } from "../utils/previewModel";
+import { API_BASE_URL } from "../config/api";
 
 function Dashboard() {
     const navigate = useNavigate();
@@ -44,7 +45,7 @@ function Dashboard() {
         try {
             setIsAnalyzing(true);
 
-            const response = await fetch("http://localhost:5176/analyze", {
+            const response = await fetch(`${API_BASE_URL}/analyze`, {
                 method: "POST",
                 body: formData,
             });

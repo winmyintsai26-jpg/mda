@@ -4,8 +4,12 @@ namespace MDA.API.WorkbookAnalysis.Validation;
 
 public class TableValidator : ITableValidator
 {
-    private const int InitialConfidence = 100;
-    private const int ValidConfidenceThreshold = 70;
+    private readonly WorkbookAnalysisOptions _options;
+
+    public TableValidator(WorkbookAnalysisOptions options)
+    {
+        _options = options;
+    }
 
     public TableValidationResult Validate(CandidateRegion table)
     {
@@ -21,15 +25,15 @@ public class TableValidator : ITableValidator
         ValidateDuplicateHeaders(result, headerRow);
         ValidateEmptyHeaders(result, headerRow);
 
-        result.Confidence = CalculateConfidence(result, headerRow);
-        result.IsValid = result.Confidence >= ValidConfidenceThreshold;
+        result.Confidence = CalculateConfidence(result, headerRow, _options.InitialValidationConfidence);
+        result.IsValid = result.Confidence >= _options.ValidConfidenceThreshold;
 
         return result;
     }
 
     private static List<List<string>> ExtractHeaderRows(CandidateRegion table)
     {
-        return table.HeaderDetectionResult?.WinningHeader?.HeaderCells?.ToList() ?? new List<List<string>>();
+        return table.HeaderDetectionResult?.WinningHeader?.HeaderCells ?? new List<List<string>>();
     }
 
     private static List<string> GetEffectiveHeaderRow(List<List<string>> headerRows)
@@ -56,7 +60,6 @@ public class TableValidator : ITableValidator
         return table.Rows
             .Skip(dataStartIndex)
             .Where(row => row.Any(cell => !string.IsNullOrWhiteSpace(cell)))
-            .Select(row => row.ToList())
             .ToList();
     }
 
@@ -127,9 +130,9 @@ public class TableValidator : ITableValidator
         }
     }
 
-    private static int CalculateConfidence(TableValidationResult result, List<string> headerRow)
+    private static int CalculateConfidence(TableValidationResult result, List<string> headerRow, int initialConfidence)
     {
-        var confidence = InitialConfidence;
+        var confidence = initialConfidence;
 
         if (result.Issues.Contains("Header is missing."))
         {
