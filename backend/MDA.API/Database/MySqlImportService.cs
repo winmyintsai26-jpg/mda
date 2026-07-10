@@ -26,7 +26,18 @@ public sealed class MySqlImportService
         }
 
         var schema = await _schemaService.GetTableSchemaAsync(request, cancellationToken);
-        var schemaByName = schema.ToDictionary(column => column.ColumnName, StringComparer.OrdinalIgnoreCase);
+
+        // Build schema dictionary using normalized keys so formatting differences
+        // between preview headers and DB columns do not block a valid match.
+        var schemaByNormalizedName = new Dictionary<string, MySqlSchemaColumn>(StringComparer.Ordinal);
+        foreach (var column in schema)
+        {
+            var normalizedColumnName = HeaderNormalizer.Normalize(column.ColumnName);
+            if (!string.IsNullOrEmpty(normalizedColumnName) && !schemaByNormalizedName.ContainsKey(normalizedColumnName))
+            {
+                schemaByNormalizedName[normalizedColumnName] = column;
+            }
+        }
 
         var matchedColumns = new List<(string PreviewHeader, MySqlSchemaColumn SchemaColumn, int Index)>();
         var ignoredPreviewColumns = new List<string>();
@@ -40,7 +51,9 @@ public sealed class MySqlImportService
                 continue;
             }
 
-            if (schemaByName.TryGetValue(previewHeader, out var schemaColumn))
+            var normalizedPreviewHeader = HeaderNormalizer.Normalize(previewHeader);
+            if (!string.IsNullOrEmpty(normalizedPreviewHeader)
+                && schemaByNormalizedName.TryGetValue(normalizedPreviewHeader, out var schemaColumn))
             {
                 matchedColumns.Add((previewHeader, schemaColumn, index));
                 continue;

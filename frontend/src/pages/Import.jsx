@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useUpload } from "../context/UploadContext";
+import { normalizeHeader } from "../utils/headerNormalizer";
 
 const API_BASE_URL = "http://localhost:5176";
 
@@ -63,9 +64,11 @@ function Import() {
     const previewHeaders = useMemo(() => table?.headers?.map((header) => header.name?.trim() || "") || [], [table]);
 
     const comparison = useMemo(() => {
+        // Compare normalized header keys so spacing/punctuation/case differences
+        // still map preview columns to the correct destination schema columns.
         const previewByName = new Map();
         previewHeaders.forEach((header) => {
-            const key = header.toLowerCase();
+            const key = normalizeHeader(header);
             if (header && !previewByName.has(key)) {
                 previewByName.set(key, header);
             }
@@ -73,23 +76,23 @@ function Import() {
 
         const schemaByName = new Map();
         schema.forEach((column) => {
-            const key = column.columnName.toLowerCase();
-            if (!schemaByName.has(key)) {
+            const key = normalizeHeader(column.columnName);
+            if (key && !schemaByName.has(key)) {
                 schemaByName.set(key, column);
             }
         });
 
         const ready = schema
-            .filter((column) => previewByName.has(column.columnName.toLowerCase()))
+            .filter((column) => previewByName.has(normalizeHeader(column.columnName)))
             .map((column) => ({
-                previewColumn: previewByName.get(column.columnName.toLowerCase()),
+                previewColumn: previewByName.get(normalizeHeader(column.columnName)),
                 databaseColumn: column.columnName,
                 dataType: column.dataType,
                 status: "Ready"
             }));
 
         const missing = schema
-            .filter((column) => !previewByName.has(column.columnName.toLowerCase()))
+            .filter((column) => !previewByName.has(normalizeHeader(column.columnName)))
             .map((column) => ({
                 previewColumn: null,
                 databaseColumn: column.columnName,
@@ -98,7 +101,7 @@ function Import() {
             }));
 
         const extra = previewHeaders
-            .filter((header) => header && !schemaByName.has(header.toLowerCase()))
+            .filter((header) => header && !schemaByName.has(normalizeHeader(header)))
             .map((header) => ({
                 previewColumn: header,
                 databaseColumn: null,

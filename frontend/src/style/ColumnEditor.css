@@ -1,0 +1,45 @@
+.header-cell {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+}
+
+.delete-column-btn {
+    background: transparent;
+    border: none;
+    color: white;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: bold;
+    padding: 2px 6px;
+    transition: 0.2s;
+}
+
+.delete-column-btn:hover {
+    color: #ffb4b4;
+    transform: scale(1.15);
+}
+
+.spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255,255,255,.35);
+    border-top: 2px solid white;
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 8px;
+    animation: spin .8s linear infinite;
+}
+
+@keyframes spin {
+
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+
+}
