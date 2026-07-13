@@ -1,6 +1,6 @@
 import { createSourceRowSignature, createSourceRowSignatures } from "./rowIdentity.js";
 
-export const SAVED_LAYOUT_SCHEMA_VERSION = 2;
+export const SAVED_LAYOUT_SCHEMA_VERSION = 3;
 export const PREVIEW_STATE_VERSION = 1;
 
 const unique = (values) => [...new Set(values.filter(Boolean))];
@@ -11,6 +11,30 @@ const normalizePatternPart = (value) => String(value ?? "")
     .replace(/\d+/g, "#")
     .replace(/[^a-z#]+/g, "-")
     .replace(/^-+|-+$/g, "");
+
+const normalizeColumnIdentity = (value) => String(value ?? "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "");
+
+const createSourceColumnSnapshots = (headers) => {
+    const occurrenceByName = new Map();
+
+    return headers.map((header, order) => {
+        const normalizedName = normalizeColumnIdentity(header.name);
+        const occurrence = occurrenceByName.get(normalizedName) || 0;
+        occurrenceByName.set(normalizedName, occurrence + 1);
+
+        return {
+            id: header.id ?? null,
+            name: header.name || "",
+            dataType: header.dataType || "Text",
+            order,
+            normalizedName,
+            occurrence
+        };
+    });
+};
 
 const createId = () => {
     if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
@@ -69,6 +93,14 @@ const getColumnConfiguration = (table, selectedAnalysisTable, columnMappings) =>
     const currentRows = Array.isArray(table?.rows) ? table.rows : [];
     const originalById = new Map(originalHeaders.map((header) => [header.id, header]));
     const currentIds = new Set(currentHeaders.map((header) => header.id));
+    const currentIdentityKeys = new Set(createSourceColumnSnapshots(currentHeaders)
+        .map((column) => `${column.normalizedName}:${column.occurrence}`));
+    const sourceColumns = createSourceColumnSnapshots(originalHeaders).map((column) => ({
+        ...column,
+        visibility: column.id != null
+            ? (currentIds.has(column.id) ? "visible" : "deleted")
+            : (currentIdentityKeys.has(`${column.normalizedName}:${column.occurrence}`) ? "visible" : "deleted")
+    }));
 
     const columns = currentHeaders.map((header, index) => {
         const original = originalById.get(header.id);
@@ -85,6 +117,7 @@ const getColumnConfiguration = (table, selectedAnalysisTable, columnMappings) =>
 
     return {
         columns,
+        sourceColumns,
         columnMappings: columnMappings.map((mapping) => ({
             sourceColumn: mapping.previewColumn,
             destinationColumn: mapping.databaseColumn,
@@ -93,10 +126,17 @@ const getColumnConfiguration = (table, selectedAnalysisTable, columnMappings) =>
         renamedColumns: columns
             .filter((column) => column.changeType === "renamed")
             .map((column) => ({ id: column.id, from: column.sourceName, to: column.name })),
-        deletedColumns: originalHeaders
-            .map((header, order) => ({ ...header, order }))
-            .filter((header) => !currentIds.has(header.id))
-            .map((header) => ({ id: header.id ?? null, name: header.name || "", dataType: header.dataType || "Text", order: header.order })),
+        deletedColumns: sourceColumns
+            .filter((column) => column.visibility === "deleted")
+            .map((column) => ({
+                id: column.id,
+                name: column.name,
+                dataType: column.dataType,
+                order: column.order,
+                normalizedName: column.normalizedName,
+                occurrence: column.occurrence,
+                visibility: column.visibility
+            })),
         addedColumns: columns
             .filter((column) => column.changeType === "added")
             .map((column) => {
@@ -117,7 +157,8 @@ const getColumnConfiguration = (table, selectedAnalysisTable, columnMappings) =>
 
 const createFinalColumnSnapshot = (table, selectedAnalysisTable, columnConfiguration) => {
     const originalHeaders = Array.isArray(selectedAnalysisTable?.headers) ? selectedAnalysisTable.headers : [];
-    const originalById = new Map(originalHeaders.map((header, index) => [header.id, { header, index }]));
+    const originalSnapshots = createSourceColumnSnapshots(originalHeaders);
+    const originalById = new Map(originalSnapshots.map((column) => [column.id, column]));
     const addedById = new Map((columnConfiguration.addedColumns || []).map((column) => [column.id, column]));
     const widths = table?.previewState?.columnWidths || {};
 
@@ -127,9 +168,10 @@ const createFinalColumnSnapshot = (table, selectedAnalysisTable, columnConfigura
 
         return {
             id: column.id,
-            sourceId: original?.header.id ?? null,
-            sourceName: original?.header.name ?? column.sourceName ?? null,
-            sourceOrder: original?.index ?? null,
+            sourceId: original?.id ?? null,
+            sourceName: original?.name ?? column.sourceName ?? null,
+            sourceOrder: original?.order ?? null,
+            sourceOccurrence: original?.occurrence ?? null,
             name: column.name,
             dataType: column.dataType,
             order: column.order,
@@ -197,6 +239,7 @@ const getPreviewState = (table, selectedAnalysisTable, selectedWorksheet, column
             worksheetName: selectedWorksheet || selectedAnalysisTable?.worksheetName || "",
             title: table?.title || selectedAnalysisTable?.title || "",
             columns,
+            sourceColumns: columnConfiguration.sourceColumns || [],
             rowSelection: getRowExclusions(table, selectedAnalysisTable, columns)
         }
     };

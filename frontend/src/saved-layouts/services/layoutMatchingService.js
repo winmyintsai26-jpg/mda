@@ -224,9 +224,18 @@ export class LayoutMatchingService {
 
     findBestMatch(layouts, analysisTables) {
         const candidates = layouts
-            .filter((layout) => layout?.schemaVersion === 1 || layout?.schemaVersion === 2)
+            .filter((layout) => [1, 2, 3].includes(layout?.schemaVersion))
             .map((layout) => this.scoreLayout(layout, analysisTables))
-            .sort((left, right) => right.accuracy - left.accuracy);
+            .sort((left, right) => {
+                const accuracyDifference = right.accuracy - left.accuracy;
+                if (accuracyDifference !== 0) return accuracyDifference;
+
+                const schemaDifference = (right.layout.schemaVersion || 0) - (left.layout.schemaVersion || 0);
+                if (schemaDifference !== 0) return schemaDifference;
+
+                return new Date(right.layout.lastUsedAt || right.layout.createdAt || 0).getTime()
+                    - new Date(left.layout.lastUsedAt || left.layout.createdAt || 0).getTime();
+            });
         const bestMatch = candidates[0] || null;
 
         return bestMatch && bestMatch.accuracy >= this.minimumAccuracy ? bestMatch : null;

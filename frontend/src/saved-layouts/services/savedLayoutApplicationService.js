@@ -5,6 +5,31 @@ const normalize = (value) => String(value ?? "")
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "");
 
+const createColumnDescriptors = (headers) => {
+    const occurrenceByName = new Map();
+
+    return headers.map((header, index) => {
+        const normalizedName = normalize(header.name);
+        const occurrence = occurrenceByName.get(normalizedName) || 0;
+        occurrenceByName.set(normalizedName, occurrence + 1);
+
+        return { header, index, normalizedName, occurrence };
+    });
+};
+
+const withColumnIdentities = (columns) => {
+    const occurrenceByName = new Map();
+
+    return columns.map((column) => {
+        const normalizedName = column.normalizedName ?? normalize(column.name);
+        const occurrence = Number.isInteger(column.occurrence)
+            ? column.occurrence
+            : (occurrenceByName.get(normalizedName) || 0);
+        occurrenceByName.set(normalizedName, Math.max(occurrenceByName.get(normalizedName) || 0, occurrence + 1));
+        return { ...column, normalizedName, occurrence };
+    });
+};
+
 const findTableForRegion = (analysisTables, savedRegion) => analysisTables.find((table) =>
     table.id === savedRegion.tableId
 ) || analysisTables.find((table) =>
@@ -37,6 +62,63 @@ const getSavedColumns = (layout) => {
             defaultValue: addedById.get(column.id)?.defaultValue ?? "",
             width: null
         }));
+};
+
+const getSourceColumnStates = (layout) => {
+    const snapshotColumns = layout.previewState?.activeTable?.sourceColumns;
+    if (Array.isArray(snapshotColumns) && snapshotColumns.length > 0) {
+        return withColumnIdentities([...snapshotColumns].sort((left, right) => left.order - right.order));
+    }
+
+    const configuration = layout.columnConfiguration || {};
+    if (Array.isArray(configuration.sourceColumns) && configuration.sourceColumns.length > 0) {
+        return withColumnIdentities([...configuration.sourceColumns].sort((left, right) => left.order - right.order));
+    }
+
+    // Backward compatibility for layouts saved before source visibility was explicit.
+    const visibleColumns = (configuration.columns || [])
+        .filter((column) => column.changeType !== "added")
+        .map((column) => ({
+            id: column.id,
+            name: column.sourceName || column.name,
+            order: column.sourceOrder ?? column.order,
+            visibility: "visible"
+        }));
+    const deletedColumns = (configuration.deletedColumns || []).map((column) => ({
+        ...column,
+        visibility: "deleted"
+    }));
+
+    return withColumnIdentities([...visibleColumns, ...deletedColumns]
+        .sort((left, right) => left.order - right.order));
+};
+
+const matchSourceStatesToCurrentColumns = (sourceStates, currentDescriptors) => {
+    const matches = new Map();
+    const usedCurrentIndexes = new Set();
+
+    sourceStates.forEach((sourceState) => {
+        let descriptor = currentDescriptors.find((candidate) =>
+            !usedCurrentIndexes.has(candidate.index)
+            && candidate.normalizedName === sourceState.normalizedName
+            && candidate.occurrence === sourceState.occurrence
+        );
+
+        if (!descriptor && sourceState.id != null) {
+            descriptor = currentDescriptors.find((candidate) =>
+                !usedCurrentIndexes.has(candidate.index)
+                && candidate.header.id === sourceState.id
+                && (!sourceState.normalizedName || candidate.normalizedName === sourceState.normalizedName)
+            );
+        }
+
+        if (descriptor) {
+            usedCurrentIndexes.add(descriptor.index);
+            matches.set(descriptor.index, sourceState);
+        }
+    });
+
+    return matches;
 };
 
 const filterPreviouslyDeletedRows = (currentTable, layout) => {
@@ -77,11 +159,12 @@ const filterPreviouslyDeletedRows = (currentTable, layout) => {
 
 const applyPreviewState = (currentTable, layout) => {
     const currentHeaders = Array.isArray(currentTable.headers) ? currentTable.headers : [];
+    const currentDescriptors = createColumnDescriptors(currentHeaders);
     const { rows: currentRows, sourceRowSignatures } = filterPreviouslyDeletedRows(currentTable, layout);
     const configuration = layout.columnConfiguration || {};
     const savedColumns = getSavedColumns(layout);
-    const deletedIds = new Set((configuration.deletedColumns || []).map((column) => column.id).filter(Boolean));
-    const deletedNames = new Set((configuration.deletedColumns || []).map((column) => normalize(column.name)).filter(Boolean));
+    const sourceStates = getSourceColumnStates(layout);
+    const sourceStateByCurrentIndex = matchSourceStatesToCurrentColumns(sourceStates, currentDescriptors);
     const usedCurrentIndexes = new Set();
     const nextHeaders = [];
     const valueResolvers = [];
@@ -92,15 +175,21 @@ const applyPreviewState = (currentTable, layout) => {
         let currentIndex = -1;
 
         if (!isAddedColumn) {
-            currentIndex = currentHeaders.findIndex((header, index) =>
-                !usedCurrentIndexes.has(index) && savedColumn.sourceId && header.id === savedColumn.sourceId
-            );
+            const sourceName = normalize(savedColumn.sourceName || savedColumn.name);
+            currentIndex = currentDescriptors.find((descriptor) =>
+                !usedCurrentIndexes.has(descriptor.index)
+                && descriptor.normalizedName === sourceName
+                && (!Number.isInteger(savedColumn.sourceOccurrence)
+                    || descriptor.occurrence === savedColumn.sourceOccurrence)
+            )?.index ?? -1;
 
             if (currentIndex < 0) {
-                const sourceKey = normalize(savedColumn.sourceName || savedColumn.name);
-                currentIndex = currentHeaders.findIndex((header, index) =>
-                    !usedCurrentIndexes.has(index) && normalize(header.name) === sourceKey
-                );
+                currentIndex = currentDescriptors.find((descriptor) =>
+                    !usedCurrentIndexes.has(descriptor.index)
+                    && savedColumn.sourceId
+                    && descriptor.header.id === savedColumn.sourceId
+                    && (!sourceName || descriptor.normalizedName === sourceName)
+                )?.index ?? -1;
             }
         }
 
@@ -130,7 +219,7 @@ const applyPreviewState = (currentTable, layout) => {
 
     currentHeaders.forEach((header, index) => {
         if (usedCurrentIndexes.has(index)) return;
-        if (deletedIds.has(header.id) || deletedNames.has(normalize(header.name))) return;
+        if (sourceStateByCurrentIndex.get(index)?.visibility === "deleted") return;
 
         nextHeaders.push(header);
         valueResolvers.push((row) => row?.[index] ?? "");
