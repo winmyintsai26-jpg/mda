@@ -224,7 +224,7 @@ export class LayoutMatchingService {
 
     findBestMatch(layouts, analysisTables) {
         const candidates = layouts
-            .filter((layout) => layout?.schemaVersion === 1)
+            .filter((layout) => layout?.schemaVersion === 1 || layout?.schemaVersion === 2)
             .map((layout) => this.scoreLayout(layout, analysisTables))
             .sort((left, right) => right.accuracy - left.accuracy);
         const bestMatch = candidates[0] || null;

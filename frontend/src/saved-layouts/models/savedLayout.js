@@ -1,4 +1,7 @@
-export const SAVED_LAYOUT_SCHEMA_VERSION = 1;
+import { createSourceRowSignature, createSourceRowSignatures } from "./rowIdentity.js";
+
+export const SAVED_LAYOUT_SCHEMA_VERSION = 2;
+export const PREVIEW_STATE_VERSION = 1;
 
 const unique = (values) => [...new Set(values.filter(Boolean))];
 
@@ -112,6 +115,93 @@ const getColumnConfiguration = (table, selectedAnalysisTable, columnMappings) =>
     };
 };
 
+const createFinalColumnSnapshot = (table, selectedAnalysisTable, columnConfiguration) => {
+    const originalHeaders = Array.isArray(selectedAnalysisTable?.headers) ? selectedAnalysisTable.headers : [];
+    const originalById = new Map(originalHeaders.map((header, index) => [header.id, { header, index }]));
+    const addedById = new Map((columnConfiguration.addedColumns || []).map((column) => [column.id, column]));
+    const widths = table?.previewState?.columnWidths || {};
+
+    return (columnConfiguration.columns || []).map((column) => {
+        const original = originalById.get(column.id);
+        const added = addedById.get(column.id);
+
+        return {
+            id: column.id,
+            sourceId: original?.header.id ?? null,
+            sourceName: original?.header.name ?? column.sourceName ?? null,
+            sourceOrder: original?.index ?? null,
+            name: column.name,
+            dataType: column.dataType,
+            order: column.order,
+            kind: added ? "added" : "source",
+            defaultValue: added?.defaultValue ?? "",
+            width: Number.isFinite(widths[column.id]) ? widths[column.id] : null
+        };
+    });
+};
+
+const projectSourceRow = (sourceRow, columns) => columns.map((column) =>
+    column.kind === "added"
+        ? column.defaultValue ?? ""
+        : sourceRow?.[column.sourceOrder] ?? ""
+);
+
+const getRowExclusions = (table, selectedAnalysisTable, columns) => {
+    const sourceRows = Array.isArray(selectedAnalysisTable?.rows) ? selectedAnalysisTable.rows : [];
+    const finalRows = Array.isArray(table?.rows) ? table.rows : [];
+    const sourceSignatures = createSourceRowSignatures(sourceRows);
+    const retainedSourceSignatures = Array.isArray(table?.sourceRowSignatures)
+        && table.sourceRowSignatures.length === finalRows.length
+        ? table.sourceRowSignatures
+        : null;
+    const remainingRows = new Map();
+
+    (retainedSourceSignatures || finalRows.map(createSourceRowSignature)).forEach((signature) => {
+        remainingRows.set(signature, (remainingRows.get(signature) || 0) + 1);
+    });
+
+    const excludedCounts = new Map();
+    sourceRows.forEach((sourceRow, rowIndex) => {
+        const comparisonSignature = retainedSourceSignatures
+            ? sourceSignatures[rowIndex]
+            : createSourceRowSignature(projectSourceRow(sourceRow, columns));
+        const available = remainingRows.get(comparisonSignature) || 0;
+
+        if (available > 0) {
+            remainingRows.set(comparisonSignature, available - 1);
+            return;
+        }
+
+        const sourceSignature = sourceSignatures[rowIndex];
+        excludedCounts.set(sourceSignature, (excludedCounts.get(sourceSignature) || 0) + 1);
+    });
+
+    return {
+        strategy: "source-row-signature",
+        sourceColumns: (selectedAnalysisTable?.headers || []).map((header, order) => ({
+            id: header.id ?? null,
+            name: header.name || "",
+            order
+        })),
+        excludedRows: [...excludedCounts].map(([signature, count]) => ({ signature, count }))
+    };
+};
+
+const getPreviewState = (table, selectedAnalysisTable, selectedWorksheet, columnConfiguration) => {
+    const columns = createFinalColumnSnapshot(table, selectedAnalysisTable, columnConfiguration);
+
+    return {
+        version: PREVIEW_STATE_VERSION,
+        activeTable: {
+            id: selectedAnalysisTable?.id ?? null,
+            worksheetName: selectedWorksheet || selectedAnalysisTable?.worksheetName || "",
+            title: table?.title || selectedAnalysisTable?.title || "",
+            columns,
+            rowSelection: getRowExclusions(table, selectedAnalysisTable, columns)
+        }
+    };
+};
+
 export function createSavedLayout({
     name,
     fileName,
@@ -125,6 +215,8 @@ export function createSavedLayout({
     const timestamp = new Date().toISOString();
     const worksheetNames = unique(analysisTables.map((candidate) => candidate.worksheetName));
 
+    const columnConfiguration = getColumnConfiguration(table, selectedAnalysisTable, columnMappings);
+
     return {
         id: createId(),
         schemaVersion: SAVED_LAYOUT_SCHEMA_VERSION,
@@ -137,7 +229,8 @@ export function createSavedLayout({
             id: selectedAnalysisTable?.id ?? null,
             title: table?.title || selectedAnalysisTable?.title || ""
         },
-        columnConfiguration: getColumnConfiguration(table, selectedAnalysisTable, columnMappings),
+        columnConfiguration,
+        previewState: getPreviewState(table, selectedAnalysisTable, selectedWorksheet, columnConfiguration),
         validationConfiguration: {
             mode: "detected-table-validation",
             isValid: selectedAnalysisTable?.validation?.isValid ?? false,

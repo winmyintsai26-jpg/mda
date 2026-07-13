@@ -2,6 +2,7 @@ import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useUpload } from "../context/UploadContext";
 import { normalizePreviewValue } from "../utils/previewModel";
+import { createSourceRowSignatures } from "../saved-layouts/models/rowIdentity";
 
 const detectColumnType = (values) => {
     const nonEmpty = values.filter((v) => v != null && String(v).trim() !== "");
@@ -648,7 +649,7 @@ function Preview() {
 
     const [selectedRowIndexes, setSelectedRowIndexes] = useState(() => new Set());
     const [history, setHistory] = useState({ past: [], future: [] });
-    const [columnWidths, setColumnWidths] = useState({});
+    const [columnWidths, setColumnWidths] = useState(() => table?.previewState?.columnWidths || {});
     const [draggedColumn, setDraggedColumn] = useState(null);
     const [selectedColumnId, setSelectedColumnId] = useState(null);
     const [renameRequest, setRenameRequest] = useState({ headerId: null, tick: 0 });
@@ -803,11 +804,16 @@ function Preview() {
             const tablesForWorksheet = analysisTables.filter((candidate) => candidate.worksheetName === worksheetName);
             const firstTable = tablesForWorksheet[0];
             if (firstTable) {
-                setTable(normalizeEditableTable({ title: firstTable.title, headers: firstTable.headers, rows: firstTable.rows }));
+                setTable(normalizeEditableTable({
+                    title: firstTable.title,
+                    headers: firstTable.headers,
+                    rows: firstTable.rows,
+                    sourceRowSignatures: createSourceRowSignatures(firstTable.rows)
+                }));
                 setSelectedTableIndex(0);
             }
             setHistory({ past: [], future: [] });
-            setColumnWidths({});
+            setColumnWidths(firstTable?.previewState?.columnWidths || {});
         }
 
         setSelectedRowIndexes(new Set());
@@ -911,7 +917,8 @@ function Preview() {
                 const selectedIndexSet = new Set(patch.rowIndexes);
                 return {
                     ...currentTable,
-                    rows: currentTable.rows.filter((_, index) => !selectedIndexSet.has(index))
+                    rows: currentTable.rows.filter((_, index) => !selectedIndexSet.has(index)),
+                    sourceRowSignatures: currentTable.sourceRowSignatures?.filter((_, index) => !selectedIndexSet.has(index))
                 };
             }
             case "insertColumn": {
@@ -975,14 +982,17 @@ function Preview() {
             }
             case "deleteRows": {
                 const nextRows = [...currentTable.rows];
+                const nextSourceRowSignatures = [...(currentTable.sourceRowSignatures || [])];
                 const rowsToRestore = [...patch.rows].sort((a, b) => a.rowIndex - b.rowIndex);
-                rowsToRestore.forEach(({ rowIndex, row }) => {
+                rowsToRestore.forEach(({ rowIndex, row, sourceRowSignature }) => {
                     nextRows.splice(rowIndex, 0, row);
+                    if (sourceRowSignature != null) nextSourceRowSignatures.splice(rowIndex, 0, sourceRowSignature);
                 });
 
                 return {
                     ...currentTable,
-                    rows: nextRows
+                    rows: nextRows,
+                    sourceRowSignatures: nextSourceRowSignatures
                 };
             }
             case "insertColumn": {
@@ -1326,12 +1336,14 @@ function Preview() {
         const selectedIndexSet = new Set(sortedIndexes);
         const deletedRows = sortedIndexes.map((rowIndex) => ({
             rowIndex,
-            row: displayTable.rows[rowIndex]
+            row: displayTable.rows[rowIndex],
+            sourceRowSignature: displayTable.sourceRowSignatures?.[rowIndex] ?? null
         }));
 
         const nextTable = {
             ...displayTable,
-            rows: displayTable.rows.filter((_, index) => !selectedIndexSet.has(index))
+            rows: displayTable.rows.filter((_, index) => !selectedIndexSet.has(index)),
+            sourceRowSignatures: displayTable.sourceRowSignatures?.filter((_, index) => !selectedIndexSet.has(index))
         };
 
         commitChange(nextTable, {
@@ -1876,7 +1888,20 @@ function Preview() {
                         <p><strong>Confidence:</strong> {selectedAnalysisTable?.validation?.confidence ?? 0}%</p>
                     </div>
                     <div className="footer-actions">
-                        <button type="button" className="primary" onClick={() => navigate("/import")}>
+                        <button
+                            type="button"
+                            className="primary"
+                            onClick={() => {
+                                setTable({
+                                    ...displayTable,
+                                    previewState: {
+                                        ...(displayTable.previewState || {}),
+                                        columnWidths
+                                    }
+                                });
+                                navigate("/import");
+                            }}
+                        >
                             Continue to Import
                         </button>
                     </div>

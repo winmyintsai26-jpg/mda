@@ -9,6 +9,7 @@ import SavedLayoutMatchDialog from "../saved-layouts/components/SavedLayoutMatch
 import { savedLayoutService } from "../saved-layouts/services/savedLayoutService";
 import { layoutMatchingService } from "../saved-layouts/services/layoutMatchingService";
 import { savedLayoutApplicationService } from "../saved-layouts/services/savedLayoutApplicationService";
+import { createSourceRowSignatures } from "../saved-layouts/models/rowIdentity";
 
 function Dashboard() {
     const navigate = useNavigate();
@@ -119,7 +120,8 @@ function Dashboard() {
                 setTable({
                     title: firstTable.title,
                     headers: firstTable.headers,
-                    rows: firstTable.rows
+                    rows: firstTable.rows,
+                    sourceRowSignatures: createSourceRowSignatures(firstTable.rows)
                 });
             } else {
                 setTable({ title: "", headers: [], rows: [] });
