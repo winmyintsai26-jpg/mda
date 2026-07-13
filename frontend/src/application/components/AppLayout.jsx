@@ -1,6 +1,7 @@
-import { NavLink, Outlet } from "react-router-dom";
+import { NavLink, Outlet, useLocation } from "react-router-dom";
 
 import AppIcon from "./AppIcon";
+import WorkflowProgress from "./WorkflowProgress";
 import "../styles/application.css";
 
 const navigation = [
@@ -14,6 +15,9 @@ const navigation = [
 ];
 
 function AppLayout() {
+    const { pathname } = useLocation();
+    const isWorkbookWorkflow = ["/upload", "/preview", "/import"].includes(pathname);
+
     return (
         <div className="mda-app-shell">
             <aside className="mda-app-sidebar">
@@ -33,7 +37,10 @@ function AppLayout() {
                     <p>Workspace</p>
                     {navigation.map((item) => (
                         <NavLink
-                            className={({ isActive }) => `mda-app-nav-link${isActive ? " is-active" : ""}`}
+                            className={({ isActive }) => {
+                                const isWorkflowActive = item.to === "/upload" && isWorkbookWorkflow;
+                                return `mda-app-nav-link${isActive || isWorkflowActive ? " is-active" : ""}`;
+                            }}
                             key={item.to}
                             to={item.to}
                         >
@@ -57,7 +64,7 @@ function AppLayout() {
                 </div>
             </aside>
 
-            <div className="mda-app-workspace">
+            <div className={`mda-app-workspace${isWorkbookWorkflow ? " has-workflow" : ""}`}>
                 <header className="mda-app-topbar">
                     <div>
                         <span className="mda-app-mobile-mark">MDA</span>
@@ -65,6 +72,7 @@ function AppLayout() {
                     </div>
                     <span className="mda-app-topbar-note">Your operational data stays under your control</span>
                 </header>
+                {isWorkbookWorkflow && <WorkflowProgress pathname={pathname} />}
                 <main className="mda-app-content">
                     <Outlet />
                 </main>

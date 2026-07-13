@@ -42,6 +42,8 @@ function App() {
                 <Route element={<AppLayout />}>
                     <Route path="/dashboard" element={<AppDashboard />} />
                     <Route path="/upload" element={<UploadPage />} />
+                    <Route path="/preview" element={<Preview />} />
+                    <Route path="/import" element={<Import />} />
                     <Route path="/analytics" element={<Analytics />} />
                     <Route
                         path="/templates"
@@ -100,8 +102,6 @@ function App() {
                     />
                 </Route>
 
-                <Route path="/preview" element={<Preview />} />
-                <Route path="/import" element={<Import />} />
             </Routes>
         </BrowserRouter>
     );

@@ -247,6 +247,91 @@
     min-height: calc(100vh - 68px);
 }
 
+.mda-app-workspace.has-workflow .mda-app-content {
+    min-height: calc(100vh - 144px);
+}
+
+.mda-app-workflow-progress {
+    position: relative;
+    z-index: 15;
+    min-height: 76px;
+    padding: 0 36px;
+    display: flex;
+    align-items: center;
+    border-bottom: 1px solid #e0e5ed;
+    background: #ffffff;
+}
+
+.mda-app-workflow-progress ol {
+    width: min(820px, 100%);
+    margin: 0 auto;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    list-style: none;
+}
+
+.mda-app-workflow-progress li {
+    position: relative;
+    min-width: 0;
+    padding: 8px 12px 8px 22px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #9aa4b2;
+}
+
+.mda-app-workflow-progress li::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    width: 8px;
+    height: 8px;
+    border: 2px solid #ffffff;
+    border-radius: 50%;
+    background: #cbd3df;
+    box-shadow: 0 0 0 1px #cbd3df;
+}
+
+.mda-app-workflow-progress li:not(:last-child)::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    right: 8px;
+    width: 26px;
+    height: 1px;
+    background: #dfe4ec;
+}
+
+.mda-app-workflow-progress li > span {
+    font-size: 9px;
+    font-weight: 760;
+    letter-spacing: 0.05em;
+}
+
+.mda-app-workflow-progress li > strong {
+    overflow: hidden;
+    font-size: 11px;
+    font-weight: 650;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.mda-app-workflow-progress li.is-complete,
+.mda-app-workflow-progress li.is-active {
+    color: var(--mda-app-blue);
+}
+
+.mda-app-workflow-progress li.is-complete::before,
+.mda-app-workflow-progress li.is-active::before {
+    background: var(--mda-app-blue);
+    box-shadow: 0 0 0 1px var(--mda-app-blue);
+}
+
+.mda-app-workflow-progress li.is-active::before {
+    box-shadow: 0 0 0 1px var(--mda-app-blue), 0 0 0 5px rgba(36, 87, 245, 0.1);
+}
+
 .mda-app-page {
     width: min(1180px, calc(100% - 72px));
     margin: 0 auto;
@@ -730,6 +815,23 @@
     padding-top: 58px;
 }
 
+.mda-app-shell .dashboard-workflow {
+    display: none;
+}
+
+.mda-app-shell .preview-page {
+    height: calc(100vh - 144px);
+    min-height: 620px;
+}
+
+.mda-app-shell .import-page {
+    min-height: calc(100vh - 144px);
+}
+
+.mda-app-shell .import-shell.empty {
+    min-height: calc(100vh - 224px);
+}
+
 @media (max-width: 1100px) {
     .mda-app-action-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -792,12 +894,29 @@
     .mda-app-topbar {
         top: 65px;
     }
+
+    .mda-app-workspace.has-workflow .mda-app-content {
+        min-height: calc(100vh - 209px);
+    }
+
+    .mda-app-shell .preview-page {
+        height: calc(100vh - 209px);
+        min-height: 560px;
+    }
+
+    .mda-app-shell .import-page {
+        min-height: calc(100vh - 209px);
+    }
 }
 
 @media (max-width: 760px) {
     .mda-app-topbar {
         min-height: 56px;
         padding: 0 20px;
+    }
+
+    .mda-app-workspace.has-workflow .mda-app-content {
+        min-height: calc(100vh - 185px);
     }
 
     .mda-app-mobile-mark {
@@ -812,6 +931,28 @@
     .mda-app-page {
         width: min(100% - 32px, 1180px);
         padding: 34px 0 44px;
+    }
+
+    .mda-app-workflow-progress {
+        min-height: 64px;
+        padding: 0 16px;
+    }
+
+    .mda-app-workflow-progress li {
+        padding: 7px 4px 7px 16px;
+        gap: 5px;
+    }
+
+    .mda-app-workflow-progress li:not(:last-child)::after {
+        display: none;
+    }
+
+    .mda-app-workflow-progress li > span {
+        display: none;
+    }
+
+    .mda-app-workflow-progress li > strong {
+        font-size: 9px;
     }
 
     .mda-app-dashboard-hero {
@@ -875,6 +1016,15 @@
 
     .mda-app-shell .dashboard-main {
         padding-top: 46px;
+    }
+
+    .mda-app-shell .preview-page {
+        height: calc(100vh - 185px);
+        min-height: 520px;
+    }
+
+    .mda-app-shell .import-page {
+        min-height: calc(100vh - 185px);
     }
 }
 
