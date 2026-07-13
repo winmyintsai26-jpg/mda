@@ -1,0 +1,468 @@
+.mda-public-site .mda-auth-page {
+    padding: 64px 0 82px;
+    background:
+        radial-gradient(circle at 88% 12%, rgba(76, 117, 255, 0.12), transparent 34%),
+        #f5f7fb;
+}
+
+.mda-public-site .mda-auth-shell {
+    min-height: 720px;
+    display: grid;
+    grid-template-columns: minmax(360px, 0.88fr) minmax(460px, 1.12fr);
+    overflow: hidden;
+    border: 1px solid #dfe4ec;
+    border-radius: 28px;
+    background: #ffffff;
+    box-shadow: 0 30px 80px rgba(18, 32, 58, 0.13);
+}
+
+.mda-public-site .mda-auth-context-panel {
+    position: relative;
+    padding: 52px;
+    overflow: hidden;
+    color: #ffffff;
+    background:
+        radial-gradient(circle at 15% 15%, rgba(64, 113, 255, 0.7), transparent 38%),
+        radial-gradient(circle at 90% 90%, rgba(44, 91, 230, 0.36), transparent 42%),
+        #0b1730;
+}
+
+.mda-public-site .mda-auth-context-grid {
+    position: absolute;
+    inset: 0;
+    opacity: 0.16;
+    background-image:
+        linear-gradient(rgba(255, 255, 255, 0.18) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.18) 1px, transparent 1px);
+    background-size: 44px 44px;
+    mask-image: linear-gradient(145deg, #000 0%, transparent 78%);
+}
+
+.mda-public-site .mda-auth-context-content {
+    position: relative;
+    z-index: 1;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.mda-public-site .mda-auth-product-mark {
+    width: fit-content;
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    color: #ffffff;
+    font-size: 13px;
+    font-weight: 680;
+    letter-spacing: -0.01em;
+}
+
+.mda-public-site .mda-auth-product-mark > span {
+    width: 34px;
+    height: 34px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.12);
+    font-size: 13px;
+    font-weight: 800;
+    backdrop-filter: blur(8px);
+}
+
+.mda-public-site .mda-auth-context-copy {
+    margin: auto 0 56px;
+}
+
+.mda-public-site .mda-auth-context-copy > p {
+    margin: 0 0 18px;
+    color: #8eabff;
+    font-size: 11px;
+    font-weight: 750;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+
+.mda-public-site .mda-auth-context-copy h2 {
+    max-width: 440px;
+    margin: 0 0 22px;
+    color: #ffffff;
+    font-size: clamp(42px, 4vw, 58px);
+    font-weight: 650;
+    letter-spacing: -0.055em;
+    line-height: 1;
+}
+
+.mda-public-site .mda-auth-context-copy > span {
+    max-width: 430px;
+    display: block;
+    color: #b8c5db;
+    font-size: 15px;
+    line-height: 1.75;
+}
+
+.mda-public-site .mda-auth-trust-list {
+    margin: 0;
+    padding: 24px 0 0;
+    display: grid;
+    gap: 14px;
+    border-top: 1px solid rgba(255, 255, 255, 0.14);
+    list-style: none;
+}
+
+.mda-public-site .mda-auth-trust-list li {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    color: #d5ddec;
+    font-size: 13px;
+}
+
+.mda-public-site .mda-auth-trust-list li > span {
+    width: 20px;
+    height: 20px;
+    display: inline-flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    color: #9db5ff;
+    background: rgba(109, 144, 255, 0.14);
+    font-size: 10px;
+    font-weight: 800;
+}
+
+.mda-public-site .mda-auth-form-panel {
+    padding: 58px clamp(36px, 6vw, 86px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #ffffff;
+}
+
+.mda-public-site .mda-auth-card {
+    width: min(100%, 480px);
+}
+
+.mda-public-site .mda-auth-heading {
+    margin-bottom: 34px;
+}
+
+.mda-public-site .mda-auth-eyebrow {
+    margin: 0 0 13px;
+    color: #2457f5;
+    font-size: 11px;
+    font-weight: 760;
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+}
+
+.mda-public-site .mda-auth-heading h1 {
+    margin: 0;
+    color: #0b1324;
+    font-size: clamp(36px, 4vw, 48px);
+    font-weight: 670;
+    letter-spacing: -0.05em;
+    line-height: 1.06;
+}
+
+.mda-public-site .mda-auth-heading > p:last-child {
+    margin: 15px 0 0;
+    color: #69768a;
+    font-size: 15px;
+    line-height: 1.6;
+}
+
+.mda-public-site .mda-auth-form {
+    display: grid;
+    gap: 20px;
+}
+
+.mda-public-site .mda-auth-field-row {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+}
+
+.mda-public-site .mda-auth-field {
+    min-width: 0;
+    display: grid;
+    gap: 8px;
+}
+
+.mda-public-site .mda-auth-field > label {
+    color: #263348;
+    font-size: 13px;
+    font-weight: 650;
+}
+
+.mda-public-site .mda-auth-input-wrap {
+    position: relative;
+}
+
+.mda-public-site .mda-auth-input-wrap input {
+    width: 100%;
+    height: 50px;
+    padding: 0 14px;
+    border: 1px solid #cfd6e1;
+    border-radius: 11px;
+    outline: none;
+    color: #101827;
+    background: #ffffff;
+    font: inherit;
+    font-size: 14px;
+    transition: border-color 150ms ease, box-shadow 150ms ease, background 150ms ease;
+}
+
+.mda-public-site .mda-auth-input-wrap input[type="password"],
+.mda-public-site .mda-auth-input-wrap input[autocomplete="new-password"],
+.mda-public-site .mda-auth-input-wrap input[autocomplete="current-password"] {
+    padding-right: 66px;
+}
+
+.mda-public-site .mda-auth-input-wrap input::placeholder {
+    color: #a3adbb;
+}
+
+.mda-public-site .mda-auth-input-wrap input:hover {
+    border-color: #adb8c8;
+}
+
+.mda-public-site .mda-auth-input-wrap input:focus {
+    border-color: #3865ef;
+    box-shadow: 0 0 0 4px rgba(56, 101, 239, 0.12);
+}
+
+.mda-public-site .mda-auth-field.has-error .mda-auth-input-wrap input {
+    border-color: #dc5960;
+    background: #fffafb;
+}
+
+.mda-public-site .mda-auth-field.has-error .mda-auth-input-wrap input:focus {
+    box-shadow: 0 0 0 4px rgba(220, 89, 96, 0.1);
+}
+
+.mda-public-site .mda-auth-password-toggle,
+.mda-public-site .mda-auth-password-toggle:hover,
+.mda-public-site .mda-auth-text-button,
+.mda-public-site .mda-auth-text-button:hover {
+    position: absolute;
+    top: 50%;
+    right: 12px;
+    min-width: 0;
+    min-height: 0;
+    margin: 0;
+    padding: 4px;
+    border: 0;
+    border-radius: 5px;
+    color: #536176;
+    background: transparent;
+    box-shadow: none;
+    font: inherit;
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1;
+    transform: translateY(-50%);
+}
+
+.mda-public-site .mda-auth-password-toggle:hover,
+.mda-public-site .mda-auth-text-button:hover {
+    color: #2457f5;
+}
+
+.mda-public-site .mda-auth-field-message {
+    min-height: 16px;
+    margin: 0;
+    color: #778397;
+    font-size: 11px;
+    line-height: 1.4;
+}
+
+.mda-public-site .mda-auth-field-error {
+    color: #be3944;
+}
+
+.mda-public-site .mda-auth-form-options {
+    margin-top: -2px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+}
+
+.mda-public-site .mda-auth-checkbox {
+    display: inline-flex;
+    align-items: flex-start;
+    gap: 9px;
+    color: #59677a;
+    font-size: 12px;
+    line-height: 1.5;
+    cursor: pointer;
+}
+
+.mda-public-site .mda-auth-checkbox input {
+    width: 15px;
+    height: 15px;
+    margin: 1px 0 0;
+    flex-shrink: 0;
+    accent-color: #2457f5;
+}
+
+.mda-public-site .mda-auth-form-options .mda-auth-text-button,
+.mda-public-site .mda-auth-form-options .mda-auth-text-button:hover {
+    position: static;
+    flex-shrink: 0;
+    color: #2457f5;
+    font-size: 12px;
+    transform: none;
+}
+
+.mda-public-site .mda-auth-submit,
+.mda-public-site .mda-auth-submit:hover {
+    width: 100%;
+    min-height: 50px;
+    margin: 2px 0 0;
+    padding: 0 20px;
+    border: 0;
+    border-radius: 11px;
+    color: #ffffff;
+    background: #2457f5;
+    box-shadow: 0 10px 24px rgba(36, 87, 245, 0.22);
+    font: inherit;
+    font-size: 14px;
+    font-weight: 700;
+    transition: background 150ms ease, box-shadow 150ms ease, transform 150ms ease;
+}
+
+.mda-public-site .mda-auth-submit:hover {
+    background: #183fc9;
+    box-shadow: 0 12px 28px rgba(36, 87, 245, 0.28);
+    transform: translateY(-1px);
+}
+
+.mda-public-site .mda-auth-status {
+    margin: 0;
+    padding: 12px 14px;
+    border: 1px solid #bbdfcb;
+    border-radius: 10px;
+    color: #17633b;
+    background: #f1fbf5;
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+.mda-public-site .mda-auth-alternate {
+    margin: 28px 0 0;
+    color: #778397;
+    font-size: 13px;
+    text-align: center;
+}
+
+.mda-public-site .mda-auth-alternate a {
+    color: #2457f5;
+    font-weight: 680;
+}
+
+.mda-public-site .mda-auth-terms {
+    display: grid;
+    gap: 6px;
+}
+
+.mda-public-site .mda-auth-terms.has-error .mda-auth-checkbox {
+    color: #a9333d;
+}
+
+.mda-public-site .mda-auth-terms > p {
+    margin: 0 0 0 24px;
+    color: #be3944;
+    font-size: 11px;
+}
+
+@media (max-width: 940px) {
+    .mda-public-site .mda-auth-shell {
+        grid-template-columns: minmax(300px, 0.72fr) minmax(430px, 1fr);
+    }
+
+    .mda-public-site .mda-auth-context-panel {
+        padding: 42px 34px;
+    }
+
+    .mda-public-site .mda-auth-form-panel {
+        padding: 50px 42px;
+    }
+}
+
+@media (max-width: 760px) {
+    .mda-public-site .mda-auth-page {
+        padding: 28px 0 54px;
+    }
+
+    .mda-public-site .mda-auth-shell {
+        min-height: 0;
+        grid-template-columns: 1fr;
+        border-radius: 22px;
+    }
+
+    .mda-public-site .mda-auth-context-panel {
+        padding: 30px;
+    }
+
+    .mda-public-site .mda-auth-context-content {
+        min-height: 180px;
+    }
+
+    .mda-public-site .mda-auth-context-copy {
+        margin: auto 0 0;
+    }
+
+    .mda-public-site .mda-auth-context-copy > p,
+    .mda-public-site .mda-auth-context-copy > span,
+    .mda-public-site .mda-auth-trust-list {
+        display: none;
+    }
+
+    .mda-public-site .mda-auth-context-copy h2 {
+        max-width: 390px;
+        margin: 42px 0 0;
+        font-size: 38px;
+    }
+
+    .mda-public-site .mda-auth-form-panel {
+        padding: 42px 30px 46px;
+    }
+}
+
+@media (max-width: 500px) {
+    .mda-public-site .mda-auth-context-panel {
+        padding: 26px 22px;
+    }
+
+    .mda-public-site .mda-auth-product-mark {
+        font-size: 11px;
+    }
+
+    .mda-public-site .mda-auth-context-copy h2 {
+        font-size: 34px;
+    }
+
+    .mda-public-site .mda-auth-form-panel {
+        padding: 36px 22px 40px;
+    }
+
+    .mda-public-site .mda-auth-field-row {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+
+    .mda-public-site .mda-auth-form-options {
+        align-items: flex-start;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .mda-public-site .mda-auth-input-wrap input,
+    .mda-public-site .mda-auth-submit {
+        transition: none;
+    }
+}
