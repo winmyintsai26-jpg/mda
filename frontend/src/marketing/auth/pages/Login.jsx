@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 import AuthField from "../components/AuthField";
 import AuthLayout from "../components/AuthLayout";
@@ -22,6 +23,7 @@ const validateLogin = ({ email, password }) => {
 };
 
 function Login() {
+    const navigate = useNavigate();
     const [form, setForm] = useState({ email: "", password: "", remember: false });
     const [errors, setErrors] = useState({});
     const [touched, setTouched] = useState({});
@@ -54,7 +56,7 @@ function Login() {
             return;
         }
 
-        setStatus("Login UI is ready. Account authentication will be connected in a future task.");
+        navigate("/dashboard");
     };
 
     return (

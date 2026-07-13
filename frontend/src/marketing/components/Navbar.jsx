@@ -33,7 +33,7 @@ function Navbar() {
 
                 <div className="mda-public-nav-actions">
                     <NavLink className="mda-public-login-link" to="/login">Login</NavLink>
-                    <Link className="mda-public-button mda-public-button-primary mda-public-button-small" to="/upload">
+                    <Link className="mda-public-button mda-public-button-primary mda-public-button-small" to="/login">
                         Get Started
                     </Link>
                 </div>

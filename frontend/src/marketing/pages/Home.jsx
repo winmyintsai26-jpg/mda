@@ -20,7 +20,7 @@ function Home() {
                         Transform messy manufacturing spreadsheets<br className="mda-public-desktop-break" /> into trusted manufacturing data.
                     </p>
                     <div className="mda-public-hero-actions">
-                        <Link className="mda-public-button mda-public-button-primary" to="/upload">Get Started</Link>
+                        <Link className="mda-public-button mda-public-button-primary" to="/login">Get Started</Link>
                         <a className="mda-public-button mda-public-button-secondary" href="#workflow">
                             <span className="mda-public-play-icon" aria-hidden="true">▶</span>
                             Watch Demo
@@ -104,7 +104,7 @@ function Home() {
                         <p className="mda-public-eyebrow">Start with your workbook</p>
                         <h2>Turn the spreadsheet you have<br />into the data you trust.</h2>
                     </div>
-                    <Link className="mda-public-button mda-public-button-light" to="/upload">Open MDA</Link>
+                    <Link className="mda-public-button mda-public-button-light" to="/login">Open MDA</Link>
                 </div>
             </section>
         </>

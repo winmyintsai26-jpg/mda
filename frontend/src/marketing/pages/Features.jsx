@@ -31,7 +31,7 @@ function Features() {
                     </div>
                     <WorkflowTimeline />
                     <div className="mda-public-centered-action">
-                        <Link className="mda-public-button mda-public-button-primary" to="/upload">Analyze a workbook</Link>
+                        <Link className="mda-public-button mda-public-button-primary" to="/login">Analyze a workbook</Link>
                     </div>
                 </div>
             </section>

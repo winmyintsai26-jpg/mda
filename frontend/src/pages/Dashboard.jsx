@@ -95,17 +95,48 @@ function Dashboard() {
 
     return (
         <div className="dashboard">
-            <div className="dashboard-header">
-                <h1>Manufacturing Data Platform</h1>
-                <p className="dashboard-subtitle">Upload an Excel workbook to analyze and prepare your manufacturing data.</p>
-            </div>
+            <div className="dashboard-grid" aria-hidden="true" />
+            <header className="dashboard-topbar">
+                <div className="dashboard-brand">
+                    <span className="dashboard-logo" aria-hidden="true">
+                        <span />
+                        <span />
+                        <span />
+                    </span>
+                    <span>MDA</span>
+                </div>
+                <span className="dashboard-workspace-label">Workbook workspace</span>
+            </header>
 
-            <UploadCard
-                file={file}
-                onFileChange={handleFileChange}
-                isAnalyzing={isAnalyzing}
-                onAnalyze={handleAnalyze}
-            />
+            <main className="dashboard-main">
+                <div className="dashboard-header">
+                    <p className="dashboard-eyebrow">Workbook analysis</p>
+                    <h1>Start with your workbook.</h1>
+                    <p className="dashboard-subtitle">Upload an Excel workbook to understand its structure and prepare trusted manufacturing data.</p>
+                </div>
+
+                <UploadCard
+                    file={file}
+                    onFileChange={handleFileChange}
+                    isAnalyzing={isAnalyzing}
+                    onAnalyze={handleAnalyze}
+                />
+
+                <div className="dashboard-workflow" aria-label="MDA workbook workflow">
+                    {[
+                        ["01", "Upload"],
+                        ["02", "Analyze"],
+                        ["03", "Preview"],
+                        ["04", "Validate"],
+                        ["05", "Import"]
+                    ].map(([number, label], index) => (
+                        <div className={`dashboard-workflow-step ${index === 0 ? "is-active" : ""}`} key={label}>
+                            <span>{number}</span>
+                            <strong>{label}</strong>
+                        </div>
+                    ))}
+                </div>
+            </main>
         </div>
     );
 }

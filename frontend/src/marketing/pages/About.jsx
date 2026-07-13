@@ -37,7 +37,7 @@ function About() {
                         <p className="mda-public-eyebrow">See it with your data</p>
                         <h2>Start with a manufacturing workbook.</h2>
                     </div>
-                    <Link className="mda-public-button mda-public-button-light" to="/upload">Get Started</Link>
+                    <Link className="mda-public-button mda-public-button-light" to="/login">Get Started</Link>
                 </div>
             </section>
         </>

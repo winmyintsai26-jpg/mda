@@ -1,0 +1,928 @@
+.mda-app-shell {
+    --mda-app-blue: #2457f5;
+    --mda-app-blue-dark: #173dcc;
+    --mda-app-ink: #0b1324;
+    --mda-app-muted: #637084;
+    --mda-app-line: #e2e7ef;
+    width: 100vw;
+    max-width: none;
+    min-height: 100vh;
+    margin-left: calc(50% - 50vw);
+    display: grid;
+    grid-template-columns: 252px minmax(0, 1fr);
+    color: var(--mda-app-muted);
+    background: #f5f7fb;
+    font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    text-align: left;
+}
+
+.mda-app-shell,
+.mda-app-shell * {
+    box-sizing: border-box;
+}
+
+.mda-app-shell a {
+    color: inherit;
+    text-decoration: none;
+}
+
+.mda-app-sidebar {
+    position: sticky;
+    top: 0;
+    z-index: 30;
+    height: 100vh;
+    padding: 26px 18px 20px;
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid #e0e5ed;
+    background: #ffffff;
+}
+
+.mda-app-brand {
+    padding: 0 8px 26px;
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    color: var(--mda-app-ink) !important;
+}
+
+.mda-app-logo {
+    width: 36px;
+    height: 36px;
+    padding: 8px;
+    display: inline-flex;
+    flex-shrink: 0;
+    align-items: flex-end;
+    justify-content: center;
+    gap: 2px;
+    border-radius: 11px;
+    background: var(--mda-app-ink);
+    box-shadow: 0 7px 18px rgba(11, 19, 36, 0.16);
+}
+
+.mda-app-logo span {
+    width: 3px;
+    border-radius: 3px;
+    background: #ffffff;
+}
+
+.mda-app-logo span:nth-child(1) { height: 9px; opacity: 0.58; }
+.mda-app-logo span:nth-child(2) { height: 17px; }
+.mda-app-logo span:nth-child(3) { height: 12px; opacity: 0.78; }
+
+.mda-app-brand-copy {
+    min-width: 0;
+    display: grid;
+    gap: 1px;
+}
+
+.mda-app-brand-copy strong {
+    font-size: 16px;
+    font-weight: 780;
+    letter-spacing: -0.03em;
+}
+
+.mda-app-brand-copy small {
+    overflow: hidden;
+    color: #8792a3;
+    font-size: 10px;
+    font-weight: 550;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.mda-app-navigation {
+    display: grid;
+    gap: 4px;
+}
+
+.mda-app-navigation > p {
+    margin: 0 10px 10px;
+    color: #a0a9b7;
+    font-size: 9px;
+    font-weight: 780;
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+}
+
+.mda-app-nav-link {
+    min-height: 44px;
+    padding: 0 11px;
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    border: 1px solid transparent;
+    border-radius: 10px;
+    color: #59677a !important;
+    font-size: 12px;
+    font-weight: 610;
+    transition: color 150ms ease, background 150ms ease, border-color 150ms ease;
+}
+
+.mda-app-nav-link:hover {
+    color: var(--mda-app-ink) !important;
+    background: #f7f9fc;
+}
+
+.mda-app-nav-link.is-active {
+    border-color: #dce4fb;
+    color: var(--mda-app-blue) !important;
+    background: #f0f4ff;
+}
+
+.mda-app-icon {
+    flex-shrink: 0;
+    stroke: currentColor;
+    stroke-width: 1.65;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.mda-app-help-link {
+    margin-top: auto;
+}
+
+.mda-app-account {
+    margin-top: 12px;
+    padding: 15px 9px 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-top: 1px solid #edf0f4;
+}
+
+.mda-app-avatar {
+    width: 34px;
+    height: 34px;
+    display: inline-flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    color: #ffffff;
+    background: var(--mda-app-blue);
+    font-size: 10px;
+    font-weight: 760;
+}
+
+.mda-app-account > span:last-child {
+    min-width: 0;
+    display: grid;
+    gap: 2px;
+}
+
+.mda-app-account strong {
+    overflow: hidden;
+    color: #263348;
+    font-size: 10px;
+    font-weight: 680;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.mda-app-account small {
+    overflow: hidden;
+    color: #96a0af;
+    font-size: 8px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.mda-app-workspace {
+    min-width: 0;
+}
+
+.mda-app-topbar {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    min-height: 68px;
+    padding: 0 36px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    border-bottom: 1px solid rgba(224, 229, 237, 0.9);
+    background: rgba(255, 255, 255, 0.86);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+}
+
+.mda-app-topbar > div {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.mda-app-mobile-mark {
+    display: none;
+    color: var(--mda-app-ink);
+    font-size: 15px;
+    font-weight: 780;
+}
+
+.mda-app-environment,
+.mda-app-topbar-note {
+    color: #7b8798;
+    font-size: 11px;
+    font-weight: 560;
+}
+
+.mda-app-environment {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.mda-app-environment i,
+.mda-app-status-badge i {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #2eb872;
+    box-shadow: 0 0 0 4px rgba(46, 184, 114, 0.1);
+}
+
+.mda-app-content {
+    min-height: calc(100vh - 68px);
+}
+
+.mda-app-page {
+    width: min(1180px, calc(100% - 72px));
+    margin: 0 auto;
+    padding: 56px 0 64px;
+}
+
+.mda-app-dashboard-hero {
+    position: relative;
+    min-height: 260px;
+    padding: 48px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 48px;
+    overflow: hidden;
+    border: 1px solid #1a2d54;
+    border-radius: 24px;
+    color: #ffffff;
+    background:
+        radial-gradient(circle at 82% 20%, rgba(75, 119, 255, 0.48), transparent 32%),
+        linear-gradient(135deg, #0b1730 0%, #10234a 100%);
+    box-shadow: 0 24px 60px rgba(11, 23, 48, 0.17);
+}
+
+.mda-app-dashboard-hero::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    opacity: 0.12;
+    background-image:
+        linear-gradient(rgba(255, 255, 255, 0.25) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.25) 1px, transparent 1px);
+    background-size: 42px 42px;
+    mask-image: linear-gradient(100deg, #000, transparent 75%);
+    pointer-events: none;
+}
+
+.mda-app-dashboard-hero > * {
+    position: relative;
+    z-index: 1;
+}
+
+.mda-app-dashboard-hero p,
+.mda-app-page-heading p,
+.mda-app-section-heading p,
+.mda-app-panel-heading p {
+    margin: 0 0 10px;
+    color: #85a3ff;
+    font-size: 9px;
+    font-weight: 780;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+}
+
+.mda-app-dashboard-hero h1 {
+    max-width: 650px;
+    margin: 0;
+    color: #ffffff;
+    font-size: clamp(38px, 4.6vw, 58px);
+    font-weight: 660;
+    letter-spacing: -0.055em;
+    line-height: 1.02;
+}
+
+.mda-app-dashboard-hero > div > span {
+    max-width: 650px;
+    margin-top: 18px;
+    display: block;
+    color: #bdc9dc;
+    font-size: 13px;
+    line-height: 1.65;
+}
+
+.mda-app-primary-action {
+    min-height: 48px;
+    padding: 0 20px;
+    display: inline-flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    border-radius: 11px;
+    color: #102044 !important;
+    background: #ffffff;
+    box-shadow: 0 12px 28px rgba(3, 10, 24, 0.25);
+    font-size: 12px;
+    font-weight: 720;
+    transition: transform 150ms ease, box-shadow 150ms ease;
+}
+
+.mda-app-primary-action:hover {
+    box-shadow: 0 15px 32px rgba(3, 10, 24, 0.3);
+    transform: translateY(-1px);
+}
+
+.mda-app-section {
+    margin-top: 44px;
+}
+
+.mda-app-section-heading,
+.mda-app-panel-heading {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 24px;
+}
+
+.mda-app-section-heading {
+    margin-bottom: 18px;
+}
+
+.mda-app-section-heading p,
+.mda-app-panel-heading p,
+.mda-app-page-heading p {
+    color: var(--mda-app-blue);
+}
+
+.mda-app-section-heading h2,
+.mda-app-panel-heading h2 {
+    margin: 0;
+    color: var(--mda-app-ink);
+    font-size: 20px;
+    font-weight: 680;
+    letter-spacing: -0.035em;
+}
+
+.mda-app-section-heading > span {
+    color: #929cab;
+    font-size: 10px;
+}
+
+.mda-app-action-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 14px;
+}
+
+.mda-app-action-card {
+    min-height: 132px;
+    padding: 19px;
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: start;
+    gap: 13px;
+    border: 1px solid var(--mda-app-line);
+    border-radius: 16px;
+    background: #ffffff;
+    box-shadow: 0 8px 24px rgba(18, 32, 58, 0.045);
+    transition: border-color 150ms ease, box-shadow 150ms ease, transform 150ms ease;
+}
+
+.mda-app-action-card:hover {
+    border-color: #c5d1f5;
+    box-shadow: 0 14px 30px rgba(36, 87, 245, 0.09);
+    transform: translateY(-2px);
+}
+
+.mda-app-action-icon,
+.mda-app-placeholder-icon,
+.mda-app-analytics-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 11px;
+    color: var(--mda-app-blue);
+    background: #eef3ff;
+}
+
+.mda-app-action-icon {
+    width: 40px;
+    height: 40px;
+}
+
+.mda-app-action-copy {
+    min-width: 0;
+    display: grid;
+    gap: 7px;
+}
+
+.mda-app-action-copy strong {
+    color: #1b2940;
+    font-size: 12px;
+    font-weight: 680;
+    line-height: 1.35;
+}
+
+.mda-app-action-copy small {
+    color: #8290a2;
+    font-size: 9px;
+    line-height: 1.55;
+}
+
+.mda-app-action-arrow {
+    color: #a6afbc;
+    font-size: 16px;
+    transition: color 150ms ease, transform 150ms ease;
+}
+
+.mda-app-action-card:hover .mda-app-action-arrow {
+    color: var(--mda-app-blue);
+    transform: translateX(2px);
+}
+
+.mda-app-dashboard-grid {
+    margin-top: 38px;
+    display: grid;
+    grid-template-columns: minmax(0, 1.25fr) minmax(320px, 0.75fr);
+    gap: 18px;
+}
+
+.mda-app-panel {
+    min-height: 320px;
+    padding: 26px;
+    border: 1px solid var(--mda-app-line);
+    border-radius: 18px;
+    background: #ffffff;
+    box-shadow: 0 10px 28px rgba(18, 32, 58, 0.045);
+}
+
+.mda-app-panel-heading {
+    align-items: center;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #edf0f4;
+}
+
+.mda-app-panel-heading > .mda-app-icon {
+    color: #9ba5b3;
+}
+
+.mda-app-empty-state {
+    min-height: 212px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+
+.mda-app-empty-state > span:first-child {
+    width: 42px;
+    height: 42px;
+    margin-bottom: 13px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+    color: #8b98aa;
+    background: #f2f4f7;
+}
+
+.mda-app-empty-state strong {
+    color: #263348;
+    font-size: 12px;
+}
+
+.mda-app-empty-state p {
+    margin: 6px 0 14px;
+    color: #929cab;
+    font-size: 10px;
+}
+
+.mda-app-empty-state a {
+    color: var(--mda-app-blue) !important;
+    font-size: 10px;
+    font-weight: 680;
+}
+
+.mda-app-status-badge,
+.mda-app-coming-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    border: 1px solid #cfe9db;
+    border-radius: 999px;
+    color: #24764d;
+    background: #f2fbf6;
+    font-size: 9px;
+    font-weight: 680;
+}
+
+.mda-app-status-badge {
+    padding: 6px 9px;
+}
+
+.mda-app-status-list {
+    display: grid;
+}
+
+.mda-app-status-row {
+    padding: 17px 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+    border-bottom: 1px solid #edf0f4;
+}
+
+.mda-app-status-row:last-child {
+    border-bottom: 0;
+}
+
+.mda-app-status-row > span {
+    min-width: 0;
+    display: grid;
+    gap: 4px;
+}
+
+.mda-app-status-row strong {
+    color: #334056;
+    font-size: 10px;
+    font-weight: 650;
+}
+
+.mda-app-status-row small {
+    color: #98a2b1;
+    font-size: 8px;
+}
+
+.mda-app-status-row b {
+    color: var(--mda-app-ink);
+    font-size: 22px;
+    font-weight: 650;
+}
+
+.mda-app-page-heading {
+    min-height: 152px;
+    padding-bottom: 34px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 36px;
+    border-bottom: 1px solid #dfe4ec;
+}
+
+.mda-app-page-heading h1 {
+    max-width: 780px;
+    margin: 0;
+    color: var(--mda-app-ink);
+    font-size: clamp(38px, 5vw, 58px);
+    font-weight: 660;
+    letter-spacing: -0.055em;
+    line-height: 1.03;
+}
+
+.mda-app-page-heading > div > span {
+    max-width: 720px;
+    margin-top: 16px;
+    display: block;
+    color: #718095;
+    font-size: 12px;
+    line-height: 1.65;
+}
+
+.mda-app-coming-badge {
+    padding: 8px 11px;
+    flex-shrink: 0;
+    border-color: #d8e1fc;
+    color: var(--mda-app-blue);
+    background: #f1f5ff;
+}
+
+.mda-app-analytics-grid {
+    margin-top: 28px;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+}
+
+.mda-app-analytics-card {
+    min-height: 230px;
+    padding: 23px;
+    display: flex;
+    flex-direction: column;
+    border: 1px solid var(--mda-app-line);
+    border-radius: 17px;
+    background: #ffffff;
+    box-shadow: 0 9px 26px rgba(18, 32, 58, 0.045);
+}
+
+.mda-app-analytics-card > div {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.mda-app-analytics-icon {
+    width: 39px;
+    height: 39px;
+}
+
+.mda-app-analytics-card > div small {
+    color: #b0b8c4;
+    font-size: 9px;
+    font-weight: 720;
+}
+
+.mda-app-analytics-card h2 {
+    margin: 27px 0 9px;
+    color: #172238;
+    font-size: 18px;
+    font-weight: 680;
+    letter-spacing: -0.035em;
+}
+
+.mda-app-analytics-card p {
+    margin: 0;
+    color: #7c899b;
+    font-size: 10px;
+    line-height: 1.65;
+}
+
+.mda-app-analytics-card > span:last-child {
+    margin-top: auto;
+    color: var(--mda-app-blue);
+    font-size: 8px;
+    font-weight: 750;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+
+.mda-app-placeholder-card {
+    min-height: 410px;
+    margin-top: 28px;
+    padding: 48px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--mda-app-line);
+    border-radius: 20px;
+    background:
+        radial-gradient(circle at 50% 0%, rgba(36, 87, 245, 0.08), transparent 35%),
+        #ffffff;
+    box-shadow: 0 12px 34px rgba(18, 32, 58, 0.05);
+    text-align: center;
+}
+
+.mda-app-placeholder-icon {
+    width: 52px;
+    height: 52px;
+    margin-bottom: 20px;
+}
+
+.mda-app-placeholder-card > p {
+    margin: 0 0 9px;
+    color: var(--mda-app-blue);
+    font-size: 9px;
+    font-weight: 760;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+
+.mda-app-placeholder-card h2 {
+    margin: 0;
+    color: var(--mda-app-ink);
+    font-size: 25px;
+    font-weight: 660;
+    letter-spacing: -0.04em;
+}
+
+.mda-app-placeholder-card > span:last-child {
+    max-width: 520px;
+    margin-top: 12px;
+    color: #7d899a;
+    font-size: 11px;
+    line-height: 1.65;
+}
+
+/* Integrate the existing Upload page without changing its behavior. */
+.mda-app-shell .dashboard {
+    width: 100%;
+    min-height: calc(100vh - 68px);
+    margin-left: 0;
+}
+
+.mda-app-shell .dashboard-topbar {
+    display: none;
+}
+
+.mda-app-shell .dashboard-main {
+    padding-top: 58px;
+}
+
+@media (max-width: 1100px) {
+    .mda-app-action-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .mda-app-dashboard-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 960px) {
+    .mda-app-shell {
+        grid-template-columns: 1fr;
+    }
+
+    .mda-app-sidebar {
+        height: auto;
+        padding: 12px 20px 10px;
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr);
+        align-items: center;
+        gap: 16px;
+        border-right: 0;
+        border-bottom: 1px solid #e0e5ed;
+    }
+
+    .mda-app-brand {
+        padding: 0;
+    }
+
+    .mda-app-brand-copy,
+    .mda-app-navigation > p,
+    .mda-app-help-link,
+    .mda-app-account {
+        display: none;
+    }
+
+    .mda-app-navigation {
+        display: flex;
+        justify-content: flex-end;
+        gap: 4px;
+        overflow-x: auto;
+        scrollbar-width: none;
+    }
+
+    .mda-app-navigation::-webkit-scrollbar {
+        display: none;
+    }
+
+    .mda-app-nav-link {
+        min-height: 40px;
+        padding: 0 10px;
+        flex-shrink: 0;
+    }
+
+    .mda-app-nav-link:nth-of-type(n + 5) {
+        display: none;
+    }
+
+    .mda-app-topbar {
+        top: 65px;
+    }
+}
+
+@media (max-width: 760px) {
+    .mda-app-topbar {
+        min-height: 56px;
+        padding: 0 20px;
+    }
+
+    .mda-app-mobile-mark {
+        display: inline;
+    }
+
+    .mda-app-environment,
+    .mda-app-topbar-note {
+        display: none;
+    }
+
+    .mda-app-page {
+        width: min(100% - 32px, 1180px);
+        padding: 34px 0 44px;
+    }
+
+    .mda-app-dashboard-hero {
+        min-height: 330px;
+        padding: 30px;
+        flex-direction: column;
+        align-items: flex-start;
+        justify-content: flex-end;
+        gap: 26px;
+    }
+
+    .mda-app-dashboard-hero h1 {
+        font-size: 40px;
+    }
+
+    .mda-app-primary-action {
+        width: 100%;
+    }
+
+    .mda-app-section {
+        margin-top: 34px;
+    }
+
+    .mda-app-section-heading > span {
+        display: none;
+    }
+
+    .mda-app-action-grid,
+    .mda-app-analytics-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .mda-app-action-card {
+        min-height: 105px;
+    }
+
+    .mda-app-panel {
+        min-height: 0;
+        padding: 21px;
+    }
+
+    .mda-app-page-heading {
+        min-height: 0;
+        padding-bottom: 28px;
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .mda-app-page-heading h1 {
+        font-size: 39px;
+    }
+
+    .mda-app-placeholder-card {
+        min-height: 340px;
+        padding: 30px 22px;
+    }
+
+    .mda-app-shell .dashboard {
+        min-height: calc(100vh - 121px);
+    }
+
+    .mda-app-shell .dashboard-main {
+        padding-top: 46px;
+    }
+}
+
+@media (max-width: 540px) {
+    .mda-app-sidebar {
+        padding-inline: 14px;
+        grid-template-columns: auto 1fr;
+    }
+
+    .mda-app-logo {
+        width: 34px;
+        height: 34px;
+    }
+
+    .mda-app-navigation {
+        justify-content: flex-start;
+    }
+
+    .mda-app-nav-link {
+        width: 40px;
+        padding: 0;
+        justify-content: center;
+    }
+
+    .mda-app-nav-link span {
+        display: none;
+    }
+
+    .mda-app-dashboard-hero {
+        padding: 26px 22px;
+        border-radius: 20px;
+    }
+
+    .mda-app-dashboard-hero h1,
+    .mda-app-page-heading h1 {
+        font-size: 34px;
+    }
+
+    .mda-app-dashboard-grid {
+        margin-top: 26px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .mda-app-nav-link,
+    .mda-app-primary-action,
+    .mda-app-action-card,
+    .mda-app-action-arrow {
+        transition: none;
+    }
+}
