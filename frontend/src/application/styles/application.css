@@ -1076,3 +1076,212 @@
         transition: none;
     }
 }
+
+/* Soft data-workspace theme */
+.mda-app-shell {
+    --mda-app-blue: #60a5fa;
+    --mda-app-blue-dark: #3b82f6;
+    --mda-app-ink: #1f2937;
+    --mda-app-muted: #64748b;
+    --mda-app-line: #d6eafb;
+    background: #f7fbff;
+}
+
+.mda-app-sidebar,
+.mda-app-topbar,
+.mda-app-workflow-progress {
+    border-color: #d6eafb;
+    background: rgba(255, 255, 255, 0.94);
+}
+
+.mda-app-logo {
+    background: #dbeafe;
+    box-shadow: 0 6px 16px rgba(96, 165, 250, 0.18);
+}
+
+.mda-app-logo span { background: #3b82f6; }
+.mda-app-nav-link:hover { background: #f5faff; }
+
+.mda-app-nav-link.is-active {
+    border-color: #bfdbfe;
+    color: #2563eb !important;
+    background: #eff6ff;
+}
+
+.mda-app-avatar {
+    color: #1d4ed8;
+    background: #dbeafe;
+}
+
+.mda-app-workflow-progress li.is-active::before {
+    box-shadow: 0 0 0 1px #60a5fa, 0 0 0 5px rgba(96, 165, 250, 0.16);
+}
+
+.mda-app-dashboard-hero {
+    border-color: #bfdbfe;
+    color: #334155;
+    background: #eff6ff;
+    box-shadow: 0 18px 45px rgba(96, 165, 250, 0.13);
+}
+
+.mda-app-dashboard-hero::before {
+    opacity: 0.5;
+    background-image:
+        linear-gradient(rgba(147, 197, 253, 0.28) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(147, 197, 253, 0.28) 1px, transparent 1px);
+}
+
+.mda-app-dashboard-hero p { color: #3b82f6; }
+.mda-app-dashboard-hero h1 { color: #1f2937; }
+.mda-app-dashboard-hero > div > span { color: #52647a; }
+
+.mda-app-primary-action {
+    border: 1px solid #93c5fd;
+    color: #17436b !important;
+    background: #bfdbfe;
+    box-shadow: 0 8px 20px rgba(96, 165, 250, 0.18);
+}
+
+.mda-app-primary-action:hover {
+    background: #a9cffb;
+    box-shadow: 0 11px 24px rgba(96, 165, 250, 0.24);
+}
+
+.mda-app-action-card,
+.mda-app-panel,
+.mda-app-analytics-card,
+.mda-app-placeholder-card {
+    border-color: #d6eafb;
+    box-shadow: 0 8px 24px rgba(71, 118, 163, 0.055);
+}
+
+.mda-app-action-card:hover {
+    border-color: #bfdbfe;
+    box-shadow: 0 13px 28px rgba(96, 165, 250, 0.12);
+}
+
+.mda-app-action-icon,
+.mda-app-placeholder-icon,
+.mda-app-analytics-icon,
+.mda-app-empty-state > span:first-child {
+    color: #3b82f6;
+    background: #eff6ff;
+}
+
+.mda-app-placeholder-card { background: #ffffff; }
+
+/* Modular data blocks */
+@media (min-width: 961px) {
+    .mda-app-sidebar {
+        top: 14px;
+        height: calc(100vh - 28px);
+        margin: 14px 0 14px 14px;
+        border: 1px solid #d6eafb;
+        border-radius: 20px;
+        box-shadow: 0 12px 32px rgba(71, 118, 163, 0.09);
+    }
+
+    .mda-app-topbar {
+        top: 14px;
+        min-height: 60px;
+        margin: 14px 18px 0;
+        border: 1px solid #d6eafb;
+        border-radius: 18px;
+        box-shadow: 0 8px 24px rgba(71, 118, 163, 0.07);
+    }
+
+    .mda-app-workflow-progress {
+        min-height: 66px;
+        margin: 10px 18px 0;
+        border: 1px solid #d6eafb;
+        border-radius: 18px;
+        box-shadow: 0 7px 20px rgba(71, 118, 163, 0.055);
+    }
+}
+
+.mda-app-nav-link {
+    border-radius: 13px;
+    transition: color 170ms ease, background 170ms ease, border-color 170ms ease, transform 170ms ease, box-shadow 170ms ease;
+}
+
+.mda-app-nav-link:hover {
+    transform: translateX(3px);
+}
+
+.mda-app-nav-link.is-active {
+    box-shadow: 0 5px 14px rgba(96, 165, 250, 0.13);
+}
+
+.mda-app-dashboard-hero,
+.mda-app-action-card,
+.mda-app-panel,
+.mda-app-analytics-card,
+.mda-app-placeholder-card {
+    border-radius: 20px;
+    box-shadow:
+        0 2px 0 rgba(147, 197, 253, 0.16),
+        0 12px 30px rgba(71, 118, 163, 0.075);
+}
+
+.mda-app-dashboard-hero {
+    box-shadow:
+        inset 0 5px 0 #bfdbfe,
+        0 2px 0 rgba(147, 197, 253, 0.16),
+        0 18px 42px rgba(96, 165, 250, 0.12);
+}
+
+.mda-app-action-card {
+    position: relative;
+    overflow: hidden;
+    border-radius: 18px;
+    box-shadow:
+        inset 0 4px 0 #bfdbfe,
+        0 2px 0 rgba(147, 197, 253, 0.14),
+        0 10px 24px rgba(71, 118, 163, 0.07);
+    transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
+}
+
+.mda-app-action-card:nth-child(2) { box-shadow: inset 0 4px 0 #bae6fd, 0 2px 0 rgba(125, 211, 252, 0.12), 0 10px 24px rgba(71, 118, 163, 0.07); }
+.mda-app-action-card:nth-child(3) { box-shadow: inset 0 4px 0 #a7f3d0, 0 2px 0 rgba(110, 231, 183, 0.1), 0 10px 24px rgba(71, 118, 163, 0.07); }
+.mda-app-action-card:nth-child(4) { box-shadow: inset 0 4px 0 #ddd6fe, 0 2px 0 rgba(196, 181, 253, 0.11), 0 10px 24px rgba(71, 118, 163, 0.07); }
+
+.mda-app-action-card:nth-child(2) .mda-app-action-icon { color: #0284c7; background: #f0f9ff; }
+.mda-app-action-card:nth-child(3) .mda-app-action-icon { color: #047857; background: #ecfdf5; }
+.mda-app-action-card:nth-child(4) .mda-app-action-icon { color: #7c3aed; background: #f5f3ff; }
+
+.mda-app-action-card:hover {
+    transform: translateY(-4px) scale(1.008);
+    box-shadow:
+        inset 0 4px 0 #93c5fd,
+        0 3px 0 rgba(147, 197, 253, 0.16),
+        0 16px 32px rgba(96, 165, 250, 0.14);
+}
+
+.mda-app-panel {
+    box-shadow:
+        inset 0 4px 0 #dbeafe,
+        0 2px 0 rgba(147, 197, 253, 0.12),
+        0 12px 28px rgba(71, 118, 163, 0.07);
+}
+
+.mda-app-panel:nth-child(2) {
+    box-shadow:
+        inset 0 4px 0 #bae6fd,
+        0 2px 0 rgba(125, 211, 252, 0.12),
+        0 12px 28px rgba(71, 118, 163, 0.07);
+}
+
+.mda-app-primary-action,
+.mda-app-action-icon,
+.mda-app-avatar,
+.mda-app-status-badge {
+    border-radius: 14px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .mda-app-nav-link,
+    .mda-app-action-card {
+        transition: none;
+        transform: none;
+    }
+}

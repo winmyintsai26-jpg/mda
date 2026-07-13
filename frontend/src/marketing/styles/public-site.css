@@ -1079,3 +1079,152 @@
         transition: none;
     }
 }
+
+/* Soft data-visualization theme */
+.mda-public-site {
+    --mda-public-ink: #1f2937;
+    --mda-public-muted: #64748b;
+    --mda-public-line: #d6eafb;
+    --mda-public-surface: #f7fbff;
+    --mda-public-blue: #60a5fa;
+    --mda-public-blue-dark: #3b82f6;
+    --mda-public-navy: #eff6ff;
+}
+
+.mda-public-logo {
+    background: #dbeafe;
+    box-shadow: 0 5px 14px rgba(96, 165, 250, 0.16);
+}
+
+.mda-public-logo span { background: #3b82f6; }
+
+.mda-public-button-primary {
+    border-color: #93c5fd;
+    color: #123f68 !important;
+    background: #bfdbfe;
+    box-shadow: 0 7px 18px rgba(96, 165, 250, 0.18);
+}
+
+.mda-public-button-primary:hover {
+    border-color: #60a5fa;
+    color: #123653 !important;
+    background: #a9cffb;
+    box-shadow: 0 9px 22px rgba(96, 165, 250, 0.24);
+}
+
+.mda-public-button-secondary,
+.mda-public-button-light {
+    border-color: #d6eafb;
+    color: #334155 !important;
+    background: #ffffff;
+    box-shadow: 0 5px 16px rgba(71, 118, 163, 0.07);
+}
+
+.mda-public-button-secondary:hover,
+.mda-public-button-light:hover {
+    border-color: #bfdbfe;
+    background: #eff6ff;
+}
+
+.mda-public-hero,
+.mda-public-page-hero,
+.mda-public-placeholder-page { background: #f7fbff; }
+
+.mda-public-hero {
+    background-image:
+        linear-gradient(rgba(191, 219, 254, 0.34) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(191, 219, 254, 0.34) 1px, transparent 1px);
+    background-size: 48px 48px;
+}
+
+.mda-public-hero-glow { background: rgba(147, 197, 253, 0.24); }
+
+.mda-public-product-preview,
+.mda-public-feature-card,
+.mda-public-workflow-node,
+.mda-public-story-card,
+.mda-public-placeholder-card {
+    border-color: #d6eafb;
+    background: #ffffff;
+    box-shadow: 0 12px 34px rgba(71, 118, 163, 0.08);
+}
+
+.mda-public-feature-icon,
+.mda-public-preview-insight {
+    border-color: #d6eafb;
+    color: #3b82f6;
+    background: #eff6ff;
+}
+
+.mda-public-preview-sidebar span.is-active {
+    background: #60a5fa;
+    box-shadow: 0 5px 12px rgba(96, 165, 250, 0.22);
+}
+
+.mda-public-preview-heading > div span:first-child { background: #60a5fa; }
+
+.mda-public-cta-card {
+    border: 1px solid #bfdbfe;
+    background: #dbeafe;
+    box-shadow: 0 20px 50px rgba(96, 165, 250, 0.15);
+}
+
+.mda-public-cta-card .mda-public-eyebrow { color: #2563eb; }
+.mda-public-cta-card h2 { color: #1f2937; }
+
+.mda-public-story-card-accent {
+    border-color: #bfdbfe;
+    background: #eff6ff;
+}
+
+.mda-public-story-card-accent > span { color: #2563eb; }
+.mda-public-story-card-accent h2 { color: #1f2937; }
+.mda-public-story-card-accent p { color: #5b6b7f; }
+
+.mda-public-placeholder-mark {
+    color: #2563eb;
+    background: #dbeafe;
+}
+
+/* Marketing surfaces use the same modular block language */
+.mda-public-product-preview,
+.mda-public-feature-card,
+.mda-public-workflow-node,
+.mda-public-story-card,
+.mda-public-placeholder-card,
+.mda-public-cta-card {
+    border-radius: 20px;
+    box-shadow:
+        inset 0 4px 0 #dbeafe,
+        0 2px 0 rgba(147, 197, 253, 0.12),
+        0 14px 34px rgba(71, 118, 163, 0.08);
+}
+
+.mda-public-feature-card:nth-child(2) { box-shadow: inset 0 4px 0 #bae6fd, 0 2px 0 rgba(125, 211, 252, 0.12), 0 14px 34px rgba(71, 118, 163, 0.08); }
+.mda-public-feature-card:nth-child(3) { box-shadow: inset 0 4px 0 #a7f3d0, 0 2px 0 rgba(110, 231, 183, 0.1), 0 14px 34px rgba(71, 118, 163, 0.08); }
+
+.mda-public-feature-card,
+.mda-public-story-card,
+.mda-public-workflow-node {
+    transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
+}
+
+.mda-public-feature-card:hover,
+.mda-public-story-card:hover,
+.mda-public-workflow-node:hover {
+    border-color: #bfdbfe;
+    transform: translateY(-4px);
+    box-shadow:
+        inset 0 4px 0 #93c5fd,
+        0 3px 0 rgba(147, 197, 253, 0.14),
+        0 18px 38px rgba(96, 165, 250, 0.13);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .mda-public-feature-card,
+    .mda-public-story-card,
+    .mda-public-workflow-node {
+        transition: none;
+        transform: none;
+    }
+}

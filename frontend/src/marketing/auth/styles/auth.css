@@ -466,3 +466,102 @@
         transition: none;
     }
 }
+
+/* Light, friendly authentication workspace */
+.mda-public-site .mda-auth-page { background: #f7fbff; }
+
+.mda-public-site .mda-auth-shell {
+    border-color: #d6eafb;
+    box-shadow: 0 24px 60px rgba(71, 118, 163, 0.12);
+}
+
+.mda-public-site .mda-auth-context-panel {
+    color: #334155;
+    background: #eff6ff;
+}
+
+.mda-public-site .mda-auth-context-grid {
+    opacity: 0.52;
+    background-image:
+        linear-gradient(rgba(147, 197, 253, 0.28) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(147, 197, 253, 0.28) 1px, transparent 1px);
+}
+
+.mda-public-site .mda-auth-product-mark,
+.mda-public-site .mda-auth-context-copy h2 { color: #1f2937; }
+
+.mda-public-site .mda-auth-product-mark > span {
+    border-color: #bfdbfe;
+    color: #2563eb;
+    background: #dbeafe;
+}
+
+.mda-public-site .mda-auth-context-copy > p,
+.mda-public-site .mda-auth-eyebrow,
+.mda-public-site .mda-auth-password-toggle:hover,
+.mda-public-site .mda-auth-text-button:hover,
+.mda-public-site .mda-auth-form-options .mda-auth-text-button,
+.mda-public-site .mda-auth-form-options .mda-auth-text-button:hover,
+.mda-public-site .mda-auth-alternate a { color: #2563eb; }
+
+.mda-public-site .mda-auth-context-copy > span,
+.mda-public-site .mda-auth-trust-list li { color: #52647a; }
+.mda-public-site .mda-auth-trust-list { border-color: #bfdbfe; }
+
+.mda-public-site .mda-auth-trust-list li > span {
+    color: #2563eb;
+    background: #dbeafe;
+}
+
+.mda-public-site .mda-auth-input-wrap input {
+    border-color: #d6eafb;
+    background: #fbfdff;
+}
+
+.mda-public-site .mda-auth-input-wrap input:hover { border-color: #bfdbfe; }
+
+.mda-public-site .mda-auth-input-wrap input:focus {
+    border-color: #60a5fa;
+    background: #ffffff;
+    box-shadow: 0 0 0 4px rgba(191, 219, 254, 0.55);
+}
+
+.mda-public-site .mda-auth-checkbox input { accent-color: #60a5fa; }
+
+.mda-public-site .mda-auth-submit,
+.mda-public-site .mda-auth-submit:hover {
+    border: 1px solid #93c5fd;
+    color: #123f68;
+    background: #bfdbfe;
+    box-shadow: 0 8px 20px rgba(96, 165, 250, 0.18);
+}
+
+.mda-public-site .mda-auth-submit:hover {
+    color: #123653;
+    background: #a9cffb;
+    box-shadow: 0 10px 24px rgba(96, 165, 250, 0.24);
+}
+
+/* Authentication panels as paired workspace blocks */
+.mda-public-site .mda-auth-shell {
+    border-radius: 20px;
+    box-shadow:
+        inset 0 4px 0 #dbeafe,
+        0 2px 0 rgba(147, 197, 253, 0.12),
+        0 20px 48px rgba(71, 118, 163, 0.12);
+}
+
+.mda-public-site .mda-auth-context-panel {
+    margin: 12px;
+    border: 1px solid #bfdbfe;
+    border-radius: 18px;
+}
+
+.mda-public-site .mda-auth-input-wrap input,
+.mda-public-site .mda-auth-status {
+    border-radius: 13px;
+}
+
+.mda-public-site .mda-auth-submit {
+    border-radius: 14px;
+}

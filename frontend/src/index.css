@@ -109,3 +109,17 @@ code {
   padding: 4px 8px;
   background: var(--code-bg);
 }
+
+/* MDA intentionally remains a light data workspace in every system theme. */
+:root {
+  --text: #64748b;
+  --text-h: #1f2937;
+  --bg: #f7fbff;
+  --border: #d6eafb;
+  --code-bg: #eff6ff;
+  --accent: #60a5fa;
+  --accent-bg: rgba(191, 219, 254, 0.42);
+  --accent-border: #93c5fd;
+  --social-bg: rgba(239, 246, 255, 0.72);
+  color-scheme: light;
+}
