@@ -1,8 +1,11 @@
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useUpload } from "../context/UploadContext";
 import { normalizeHeader } from "../utils/headerNormalizer";
 import { API_BASE_URL } from "../config/api";
+import RememberLayoutDialog from "../saved-layouts/components/RememberLayoutDialog";
+import { createSavedLayout } from "../saved-layouts/models/savedLayout";
+import { savedLayoutService } from "../saved-layouts/services/savedLayoutService";
 
 function Import() {
     const navigate = useNavigate();
@@ -24,6 +27,10 @@ function Import() {
     const [selectedDatabase, setSelectedDatabase] = useState("");
     const [selectedTable, setSelectedTable] = useState("");
     const [importResult, setImportResult] = useState(null);
+    const [layoutDialogStep, setLayoutDialogStep] = useState(null);
+    const [layoutName, setLayoutName] = useState("");
+    const [layoutError, setLayoutError] = useState("");
+    const [layoutSaveMessage, setLayoutSaveMessage] = useState("");
 
     const importSuccessMessage = useMemo(() => {
         if (!importResult) {
@@ -143,6 +150,52 @@ function Import() {
             matchedColumns: ready.map((item) => item.databaseColumn)
         };
     }, [previewHeaders, schema]);
+
+    const handleCloseLayoutDialog = useCallback(() => {
+        setLayoutDialogStep(null);
+        setLayoutError("");
+    }, []);
+
+    const handleRememberLayout = () => {
+        const suggestedName = table?.title || selectedAnalysisTable?.title || fileName.replace(/\.[^.]+$/, "");
+        setLayoutName(suggestedName || "");
+        setLayoutError("");
+        setLayoutDialogStep("name");
+    };
+
+    const handleSaveLayout = (event) => {
+        event.preventDefault();
+        const trimmedName = layoutName.trim();
+
+        if (!trimmedName) {
+            setLayoutError("Layout name is required.");
+            return;
+        }
+
+        try {
+            const savedLayout = createSavedLayout({
+                name: trimmedName,
+                fileName,
+                analysisTables,
+                table,
+                selectedAnalysisTable,
+                selectedWorksheet,
+                columnMappings: comparison.ready,
+                destination: {
+                    provider: "mysql",
+                    database: selectedDatabase,
+                    table: selectedTable
+                }
+            });
+
+            savedLayoutService.save(savedLayout);
+            setLayoutSaveMessage(`Layout “${savedLayout.name}” was saved.`);
+            setLayoutDialogStep(null);
+            setLayoutError("");
+        } catch (error) {
+            setLayoutError(error.message || "Unable to save this layout.");
+        }
+    };
 
     const handleConnectionFieldChange = (field) => (event) => {
         setConnection((current) => ({
@@ -292,6 +345,10 @@ function Import() {
             }
 
             setImportResult(payload);
+            setLayoutDialogStep("success");
+            setLayoutName("");
+            setLayoutError("");
+            setLayoutSaveMessage("");
         } catch (error) {
             setConnectionError(error.message || "Import failed.");
         } finally {
@@ -336,6 +393,15 @@ function Import() {
                         <div><span>Table</span><strong>{table?.title || selectedAnalysisTable?.title || "Edited preview table"}</strong></div>
                         <div><span>Rows</span><strong>{table.rows.length}</strong></div>
                         <div><span>Columns</span><strong>{table.headers.length}</strong></div>
+                        {table.savedLayout?.name && (
+                            <div><span>Applied Layout</span><strong>{table.savedLayout.name}</strong></div>
+                        )}
+                        {table.savedLayout?.importDestination && (
+                            <div>
+                                <span>Saved Destination</span>
+                                <strong>{table.savedLayout.importDestination.database}.{table.savedLayout.importDestination.table}</strong>
+                            </div>
+                        )}
                     </div>
                 </div>
 
@@ -491,10 +557,29 @@ function Import() {
                                     {selectedTable ? ` Destination table: ${selectedTable}.` : ""}
                                 </p>
                             )}
+                            {layoutSaveMessage && <p className="import-message success">{layoutSaveMessage}</p>}
                         </div>
                     </div>
                 )}
             </div>
+
+            {layoutDialogStep && (
+                <RememberLayoutDialog
+                    step={layoutDialogStep}
+                    insertedRowCount={importResult?.insertedRowCount}
+                    database={selectedDatabase}
+                    table={selectedTable}
+                    layoutName={layoutName}
+                    error={layoutError}
+                    onLayoutNameChange={(event) => {
+                        setLayoutName(event.target.value);
+                        setLayoutError("");
+                    }}
+                    onRemember={handleRememberLayout}
+                    onNotNow={handleCloseLayoutDialog}
+                    onSave={handleSaveLayout}
+                />
+            )}
         </div>
     );
 }

@@ -5,6 +5,10 @@ import UploadCard from "../components/UploadCard";
 import { useUpload } from "../context/UploadContext";
 import { createPreviewTablesFromAnalysis } from "../utils/previewModel";
 import { API_BASE_URL } from "../config/api";
+import SavedLayoutMatchDialog from "../saved-layouts/components/SavedLayoutMatchDialog";
+import { savedLayoutService } from "../saved-layouts/services/savedLayoutService";
+import { layoutMatchingService } from "../saved-layouts/services/layoutMatchingService";
+import { savedLayoutApplicationService } from "../saved-layouts/services/savedLayoutApplicationService";
 
 function Dashboard() {
     const navigate = useNavigate();
@@ -20,6 +24,8 @@ function Dashboard() {
 
     const [file, setFile] = useState(null);
     const [isAnalyzing, setIsAnalyzing] = useState(false);
+    const [layoutMatch, setLayoutMatch] = useState(null);
+    const [pendingPreviewTables, setPendingPreviewTables] = useState([]);
 
     const handleFileChange = (event) => {
         const chosenFile = event.target.files[0];
@@ -31,6 +37,41 @@ function Dashboard() {
         setFileName(chosenFile?.name || "");
         setSelectedWorksheet(null);
         setWorksheetTables({});
+        setLayoutMatch(null);
+        setPendingPreviewTables([]);
+    };
+
+    const handleAnalyzeNormally = () => {
+        setLayoutMatch(null);
+        setPendingPreviewTables([]);
+        navigate("/preview");
+    };
+
+    const handleApplySavedLayout = () => {
+        if (!layoutMatch) {
+            handleAnalyzeNormally();
+            return;
+        }
+
+        try {
+            const appliedLayout = savedLayoutApplicationService.apply(layoutMatch.layout, pendingPreviewTables);
+            setAnalysisTables(appliedLayout.analysisTables);
+            setSelectedTableIndex(appliedLayout.selectedTableIndex);
+            setSelectedWorksheet(appliedLayout.selectedWorksheet);
+            setTable(appliedLayout.activeTable);
+
+            try {
+                savedLayoutService.markUsed(layoutMatch.layout.id);
+            } catch (error) {
+                console.warn("[Dashboard] Saved layout usage date could not be updated.", error);
+            }
+        } catch (error) {
+            console.warn("[Dashboard] Unable to apply saved layout. Continuing with normal analysis.", error);
+        }
+
+        setLayoutMatch(null);
+        setPendingPreviewTables([]);
+        navigate("/preview");
     };
 
     const handleAnalyze = async () => {
@@ -82,6 +123,19 @@ function Dashboard() {
                 });
             } else {
                 setTable({ title: "", headers: [], rows: [] });
+            }
+
+            try {
+                const savedLayouts = savedLayoutService.getAll();
+                const matchingLayout = layoutMatchingService.findBestMatch(savedLayouts, previewTables);
+
+                if (matchingLayout) {
+                    setPendingPreviewTables(previewTables);
+                    setLayoutMatch(matchingLayout);
+                    return;
+                }
+            } catch (error) {
+                console.warn("[Dashboard] Saved layout detection was unavailable. Continuing normally.", error);
             }
 
             navigate("/preview");
@@ -137,6 +191,14 @@ function Dashboard() {
                     ))}
                 </div>
             </main>
+
+            {layoutMatch && (
+                <SavedLayoutMatchDialog
+                    match={layoutMatch}
+                    onApply={handleApplySavedLayout}
+                    onAnalyzeNormally={handleAnalyzeNormally}
+                />
+            )}
         </div>
     );
 }
