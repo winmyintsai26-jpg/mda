@@ -314,3 +314,357 @@
 @media (prefers-reduced-motion: reduce) {
     .mda-analysis-page button { transition: none; }
 }
+
+/* Executive decision-page presentation */
+.mda-analysis-level-card {
+    margin-top: 26px;
+    padding: 26px;
+    border: 1px solid var(--analysis-line);
+    border-radius: 20px;
+    background: #ffffff;
+    box-shadow:
+        inset 0 4px 0 #dbeafe,
+        0 12px 30px rgba(71, 118, 163, 0.07);
+}
+
+.mda-analysis-findings-level {
+    box-shadow:
+        inset 0 4px 0 #93c5fd,
+        0 14px 34px rgba(59, 130, 246, 0.09);
+}
+
+.mda-analysis-level-card .mda-analysis-section-heading {
+    margin-bottom: 18px;
+}
+
+.mda-analysis-summary-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.mda-analysis-summary-grid article {
+    min-height: 94px;
+    padding: 16px;
+    align-content: space-between;
+}
+
+.mda-analysis-summary-grid article.is-wide {
+    grid-column: span 2;
+}
+
+.mda-analysis-summary-grid article.is-positive {
+    box-shadow: inset 0 4px 0 #a7f3d0, 0 8px 20px rgba(71,118,163,.06);
+}
+
+.mda-analysis-summary-grid article.is-warning {
+    box-shadow: inset 0 4px 0 #fde68a, 0 8px 20px rgba(71,118,163,.06);
+}
+
+.mda-analysis-summary-grid strong {
+    font-size: clamp(17px, 2vw, 23px);
+    white-space: normal;
+}
+
+.mda-analysis-finding-list {
+    display: grid;
+    gap: 10px;
+}
+
+.mda-analysis-finding-list article {
+    min-height: 92px;
+    padding: 17px 18px;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto auto;
+    align-items: center;
+    gap: 15px;
+    border: 1px solid #dceaf7;
+    border-radius: 16px;
+    background: #fbfdff;
+    transition: border-color 170ms ease, box-shadow 170ms ease, transform 170ms ease;
+}
+
+.mda-analysis-finding-list article:hover {
+    border-color: #bfdbfe;
+    box-shadow: 0 9px 22px rgba(59, 130, 246, 0.08);
+    transform: translateY(-1px);
+}
+
+.mda-analysis-finding-number {
+    width: 34px;
+    height: 34px;
+    display: grid;
+    place-items: center;
+    border-radius: 11px;
+    color: #2563eb;
+    background: #eff6ff;
+    font-size: 9px;
+    font-weight: 800;
+}
+
+.mda-analysis-finding-list article > div {
+    min-width: 0;
+}
+
+.mda-analysis-finding-list article > div strong {
+    color: #24334a;
+    font-size: 12px;
+    font-weight: 730;
+}
+
+.mda-analysis-finding-list article > div p {
+    margin-top: 5px;
+    color: #6f8096;
+    font-size: 9px;
+    line-height: 1.55;
+}
+
+.mda-analysis-importance {
+    padding: 6px 9px;
+    border-radius: 999px;
+    font-size: 8px;
+    font-weight: 780;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+}
+
+.mda-analysis-importance.is-critical { color: #b42318; background: #fef3f2; }
+.mda-analysis-importance.is-high { color: #b54708; background: #fffaeb; }
+.mda-analysis-importance.is-important { color: #175cd3; background: #eff8ff; }
+
+.mda-analysis-finding-list article > button {
+    min-height: 36px;
+    padding: 0 11px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    border: 1px solid #cfe2f5;
+    border-radius: 10px;
+    color: #2563eb;
+    background: #ffffff;
+    cursor: pointer;
+    font-size: 9px;
+    font-weight: 700;
+}
+
+.mda-analysis-more-findings {
+    margin: 12px 2px 0;
+    color: #7b8ba1;
+    font-size: 9px;
+}
+
+.mda-analysis-chart-heading {
+    cursor: default;
+}
+
+.mda-analysis-accordion-list {
+    display: grid;
+    gap: 10px;
+}
+
+.mda-analysis-accordion {
+    overflow: hidden;
+    border: 1px solid #dce9f5;
+    border-radius: 16px;
+    background: #fbfdff;
+    transition: border-color 180ms ease, box-shadow 180ms ease;
+}
+
+.mda-analysis-accordion.is-open {
+    border-color: #bfdbfe;
+    box-shadow: 0 10px 24px rgba(71, 118, 163, 0.07);
+}
+
+.mda-analysis-accordion-toggle {
+    width: 100%;
+    min-height: 74px;
+    padding: 14px 17px;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 13px;
+    border: 0;
+    color: inherit;
+    background: transparent;
+    cursor: pointer;
+    text-align: left;
+}
+
+.mda-analysis-accordion-toggle:hover {
+    background: #f5faff;
+}
+
+.mda-analysis-accordion-chevron {
+    width: 30px;
+    height: 30px;
+    display: grid;
+    place-items: center;
+    border-radius: 10px;
+    color: #2563eb;
+    background: #eff6ff;
+    font-size: 20px;
+    line-height: 1;
+    transition: transform 220ms ease;
+}
+
+.mda-analysis-accordion.is-open .mda-analysis-accordion-chevron {
+    transform: rotate(90deg);
+}
+
+.mda-analysis-accordion-toggle > span:nth-child(2) {
+    display: grid;
+    gap: 4px;
+}
+
+.mda-analysis-accordion-toggle strong {
+    color: #2a3a50;
+    font-size: 11px;
+    font-weight: 720;
+}
+
+.mda-analysis-accordion-toggle small {
+    color: #7a899e;
+    font-size: 9px;
+}
+
+.mda-analysis-accordion-toggle b {
+    min-width: 28px;
+    padding: 5px 8px;
+    border-radius: 999px;
+    color: #52657c;
+    background: #edf4fa;
+    font-size: 8px;
+    text-align: center;
+}
+
+.mda-analysis-accordion-animation {
+    display: grid;
+    grid-template-rows: 0fr;
+    opacity: 0;
+    transition: grid-template-rows 240ms ease, opacity 180ms ease;
+}
+
+.mda-analysis-accordion-animation > div {
+    min-height: 0;
+    overflow: hidden;
+}
+
+.mda-analysis-accordion.is-open .mda-analysis-accordion-animation {
+    grid-template-rows: 1fr;
+    opacity: 1;
+}
+
+.mda-analysis-accordion-content {
+    padding: 4px 17px 17px;
+    border-top: 1px solid #e8f0f7;
+}
+
+.mda-analysis-accordion-content .mda-analysis-quality-list,
+.mda-analysis-accordion-content .mda-analysis-no-charts,
+.mda-analysis-accordion-content .mda-analysis-statistics-wrap,
+.mda-analysis-accordion-content .mda-analysis-row-table-wrap,
+.mda-analysis-accordion-content .mda-analysis-relationship-list {
+    margin-top: 14px;
+}
+
+.mda-analysis-relationship-list {
+    display: grid;
+    gap: 8px;
+}
+
+.mda-analysis-relationship-list button {
+    width: 100%;
+    padding: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    border: 1px solid #dce9f5;
+    border-radius: 13px;
+    color: inherit;
+    background: #ffffff;
+    cursor: pointer;
+    text-align: left;
+}
+
+.mda-analysis-relationship-list button > span {
+    display: grid;
+    gap: 4px;
+}
+
+.mda-analysis-relationship-list strong { color: #334155; font-size: 10px; }
+.mda-analysis-relationship-list small { color: #7a899e; font-size: 8px; }
+.mda-analysis-relationship-list b { color: #2563eb; font-size: 8px; }
+
+.mda-analysis-statistics-wrap {
+    overflow-x: auto;
+    border: 1px solid #dce9f5;
+    border-radius: 13px;
+}
+
+.mda-analysis-statistics-wrap table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 9px;
+    white-space: nowrap;
+}
+
+.mda-analysis-statistics-wrap th,
+.mda-analysis-statistics-wrap td {
+    padding: 11px 13px;
+    border-bottom: 1px solid #e8f0f7;
+    color: #5f7086;
+    text-align: right;
+}
+
+.mda-analysis-statistics-wrap thead th {
+    color: #42546c;
+    background: #eff6ff;
+    font-weight: 720;
+}
+
+.mda-analysis-statistics-wrap th:first-child {
+    text-align: left;
+}
+
+.mda-analysis-drawer > header > button {
+    padding: 0;
+    display: grid;
+    flex: 0 0 38px;
+    place-items: center;
+    align-self: flex-start;
+    line-height: 1;
+}
+
+.mda-analysis-drawer > header > button > span {
+    margin: 0;
+    display: block;
+    color: inherit;
+    font-size: 22px;
+    line-height: 1;
+    transform: translateY(-1px);
+}
+
+@media (max-width: 900px) {
+    .mda-analysis-summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .mda-analysis-finding-list article { grid-template-columns: auto minmax(0, 1fr) auto; }
+    .mda-analysis-finding-list article > button { grid-column: 2 / -1; justify-self: start; }
+}
+
+@media (max-width: 560px) {
+    .mda-analysis-level-card { padding: 20px; }
+    .mda-analysis-summary-grid { grid-template-columns: 1fr; }
+    .mda-analysis-summary-grid article.is-wide { grid-column: auto; }
+    .mda-analysis-finding-list article { grid-template-columns: auto 1fr; align-items: start; }
+    .mda-analysis-importance { justify-self: start; }
+    .mda-analysis-finding-list article > button { grid-column: 2; }
+    .mda-analysis-accordion-toggle { grid-template-columns: auto 1fr; }
+    .mda-analysis-accordion-toggle b { grid-column: 2; justify-self: start; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .mda-analysis-accordion,
+    .mda-analysis-accordion-chevron,
+    .mda-analysis-accordion-animation,
+    .mda-analysis-finding-list article {
+        transition: none;
+    }
+}
