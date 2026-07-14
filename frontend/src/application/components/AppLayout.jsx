@@ -16,7 +16,7 @@ const navigation = [
 
 function AppLayout() {
     const { pathname } = useLocation();
-    const isWorkbookWorkflow = ["/upload", "/preview", "/import"].includes(pathname);
+    const isWorkbookWorkflow = ["/upload", "/preview", "/import", "/analytics"].includes(pathname);
 
     return (
         <div className="mda-app-shell">

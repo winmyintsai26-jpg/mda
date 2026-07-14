@@ -11,6 +11,7 @@ function RememberLayoutDialog({
     error,
     onLayoutNameChange,
     onRemember,
+    onAnalyze,
     onNotNow,
     onSave
 }) {
@@ -52,7 +53,7 @@ function RememberLayoutDialog({
                         <p className="mda-layout-dialog-eyebrow">Import completed</p>
                         <h2 id="mda-layout-dialog-title">Your data was imported successfully.</h2>
                         <p id="mda-layout-dialog-description" className="mda-layout-dialog-copy">
-                            Would you like MDA to remember this workbook layout for future uploads?
+                            MDA has prepared a business analysis from the exact rows that were imported.
                         </p>
 
                         <dl className="mda-layout-import-summary">
@@ -67,8 +68,9 @@ function RememberLayoutDialog({
                         </dl>
 
                         <div className="mda-layout-dialog-actions">
-                            <button type="button" className="mda-layout-primary-button" onClick={onRemember}>Remember Layout</button>
-                            <button type="button" className="mda-layout-secondary-button" onClick={onNotNow}>Not Now</button>
+                            <button type="button" className="mda-layout-primary-button" onClick={onAnalyze}>View Business Analysis</button>
+                            <button type="button" className="mda-layout-secondary-button" onClick={onRemember}>Remember Layout</button>
+                            <button type="button" className="mda-layout-tertiary-button" onClick={onNotNow}>Stay Here</button>
                         </div>
                     </>
                 ) : (

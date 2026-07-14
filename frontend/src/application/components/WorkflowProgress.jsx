@@ -1,9 +1,10 @@
-const workflowSteps = ["Upload", "Analyze", "Preview", "Validate", "Import"];
+const workflowSteps = ["Upload", "Analyze", "Preview", "Validate", "Import", "Business Analysis"];
 
 const routeStepIndex = {
     "/upload": 0,
     "/preview": 2,
-    "/import": 4
+    "/import": 4,
+    "/analytics": 5
 };
 
 function WorkflowProgress({ pathname }) {

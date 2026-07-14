@@ -276,7 +276,9 @@
 .mda-app-shell .mda-layout-primary-button,
 .mda-app-shell .mda-layout-primary-button:hover,
 .mda-app-shell .mda-layout-secondary-button,
-.mda-app-shell .mda-layout-secondary-button:hover {
+.mda-app-shell .mda-layout-secondary-button:hover,
+.mda-app-shell .mda-layout-tertiary-button,
+.mda-app-shell .mda-layout-tertiary-button:hover {
     min-height: 45px;
     margin: 0;
     padding: 0 18px;
@@ -284,6 +286,19 @@
     font: inherit;
     font-size: 11px;
     font-weight: 700;
+}
+
+.mda-app-shell .mda-layout-tertiary-button,
+.mda-app-shell .mda-layout-tertiary-button:hover {
+    border: 0;
+    color: #718096;
+    background: transparent;
+    box-shadow: none;
+}
+
+.mda-app-shell .mda-layout-tertiary-button:hover {
+    color: #334155;
+    background: #f8fbff;
 }
 
 .mda-app-shell .mda-layout-primary-button,

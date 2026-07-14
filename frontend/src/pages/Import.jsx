@@ -9,7 +9,7 @@ import { savedLayoutService } from "../saved-layouts/services/savedLayoutService
 
 function Import() {
     const navigate = useNavigate();
-    const { table, fileName, selectedWorksheet, analysisTables, selectedTableIndex } = useUpload();
+    const { table, fileName, selectedWorksheet, analysisTables, selectedTableIndex, setImportedDataset } = useUpload();
 
     const [connection, setConnection] = useState({
         host: "localhost",
@@ -345,6 +345,20 @@ function Import() {
             }
 
             setImportResult(payload);
+            setImportedDataset({
+                name: table?.title || selectedAnalysisTable?.title || selectedTable || "Imported dataset",
+                fileName,
+                worksheet: selectedWorksheet || "",
+                destination: { provider: "mysql", database: selectedDatabase, table: selectedTable },
+                headers: table.headers.map((header, index) => ({
+                    id: header.id ?? `column-${index}`,
+                    name: header.name ?? `Column ${index + 1}`,
+                    dataType: header.dataType ?? ""
+                })),
+                rows: table.rows.map((row) => row.map((value) => String(value ?? ""))),
+                importedAt: new Date().toISOString(),
+                insertedRowCount: payload.insertedRowCount
+            });
             setLayoutDialogStep("success");
             setLayoutName("");
             setLayoutError("");
@@ -576,6 +590,7 @@ function Import() {
                         setLayoutError("");
                     }}
                     onRemember={handleRememberLayout}
+                    onAnalyze={() => navigate("/analytics")}
                     onNotNow={handleCloseLayoutDialog}
                     onSave={handleSaveLayout}
                 />
