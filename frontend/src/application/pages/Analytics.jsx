@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 
 import { formatCompactNumber } from "../../business-analysis/analysisEngine";
+import { createChartInteraction } from "../../business-analysis/services/createChartInteraction";
 import { createExecutiveAnalysisViewModel } from "../../business-analysis/services/createExecutiveAnalysisViewModel";
 import { useBusinessAnalysis } from "../../business-analysis/services/useBusinessAnalysis";
 import { useUpload } from "../../context/UploadContext";
@@ -20,23 +21,38 @@ function formatDateRange(dateRange) {
     return `${dateFormatter.format(dateRange.start)} – ${dateFormatter.format(dateRange.end)}`;
 }
 
-function BarChart({ chart, onDrillDown }) {
+function interactiveMark(onSelect, interaction) {
+    return {
+        onClick: () => onSelect(interaction),
+        onKeyDown: (event) => {
+            if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                onSelect(interaction);
+            }
+        }
+    };
+}
+
+function BarChart({ chart, dataset, onSelect, tooltipEvents }) {
     const maximum = Math.max(...chart.data.map((item) => Math.abs(item.value)), 1);
 
     return (
         <div className="mda-analysis-bar-chart" aria-label={chart.title}>
-            {chart.data.map((item) => (
-                <button type="button" key={item.label} onClick={() => onDrillDown(item.rowIndices, `${chart.title}: ${item.label}`)}>
-                    <span className="mda-analysis-bar-label" title={item.label}>{item.label}</span>
-                    <span className="mda-analysis-bar-track"><span style={{ width: `${Math.max(3, (Math.abs(item.value) / maximum) * 100)}%` }} /></span>
-                    <strong>{formatCompactNumber(item.value)}</strong>
-                </button>
-            ))}
+            {chart.data.map((item) => {
+                const interaction = createChartInteraction(chart, item, dataset);
+                return (
+                    <button type="button" key={item.label} {...interactiveMark(onSelect, interaction)} {...tooltipEvents(interaction)}>
+                        <span className="mda-analysis-bar-label">{item.label}</span>
+                        <span className="mda-analysis-bar-track"><span style={{ width: `${Math.max(3, (Math.abs(item.value) / maximum) * 100)}%` }} /></span>
+                        <strong>{formatCompactNumber(item.value)}</strong>
+                    </button>
+                );
+            })}
         </div>
     );
 }
 
-function LineChart({ chart }) {
+function LineChart({ chart, dataset, onSelect, tooltipEvents }) {
     const width = 620;
     const height = 210;
     const padding = 24;
@@ -57,14 +73,21 @@ function LineChart({ chart }) {
                 <line x1={padding} y1={height - padding} x2={width - padding} y2={height - padding} />
                 <line x1={padding} y1={padding} x2={padding} y2={height - padding} />
                 <polyline points={points.map((point) => `${point.x},${point.y}`).join(" ")} />
-                {points.map((point) => <circle key={point.label} cx={point.x} cy={point.y} r="5" />)}
+                {points.map((point) => {
+                    const interaction = createChartInteraction(chart, point, dataset);
+                    return (
+                        <g className="mda-analysis-svg-mark" key={point.label} role="button" tabIndex="0" aria-label={`${interaction.selectionLabel}, ${formatCompactNumber(point.value)}`} {...interactiveMark(onSelect, interaction)} {...tooltipEvents(interaction)}>
+                            <circle cx={point.x} cy={point.y} r="8" />
+                        </g>
+                    );
+                })}
             </svg>
             <div className="mda-analysis-axis-labels"><span>{chart.data[0]?.label}</span><span>{chart.data.at(-1)?.label}</span></div>
         </div>
     );
 }
 
-function ScatterChart({ chart }) {
+function ScatterChart({ chart, dataset, onSelect, tooltipEvents }) {
     const width = 620;
     const height = 210;
     const padding = 24;
@@ -84,7 +107,12 @@ function ScatterChart({ chart }) {
                 {chart.data.map((point, index) => {
                     const x = padding + ((point.x - minX) / (maxX - minX || 1)) * (width - padding * 2);
                     const y = height - padding - ((point.y - minY) / (maxY - minY || 1)) * (height - padding * 2);
-                    return <circle key={`${point.x}-${point.y}-${index}`} cx={x} cy={y} r="5" />;
+                    const interaction = createChartInteraction(chart, point, dataset);
+                    return (
+                        <g className="mda-analysis-svg-mark" key={`${point.x}-${point.y}-${index}`} role="button" tabIndex="0" aria-label={interaction.selectionLabel} {...interactiveMark(onSelect, interaction)} {...tooltipEvents(interaction)}>
+                            <circle cx={x} cy={y} r="7" />
+                        </g>
+                    );
                 })}
             </svg>
             <div className="mda-analysis-axis-labels"><span>{chart.meta.xColumn}</span><span>{chart.meta.yColumn}</span></div>
@@ -92,8 +120,62 @@ function ScatterChart({ chart }) {
     );
 }
 
-function Chart({ chart, onDrillDown }) {
+function PieChart({ chart, dataset, onSelect, tooltipEvents }) {
+    const total = chart.data.reduce((sum, item) => sum + Math.abs(item.value), 0) || 1;
+    const cumulativeValues = chart.data.map((_, index) => chart.data
+        .slice(0, index + 1)
+        .reduce((sum, item) => sum + Math.abs(item.value), 0));
+    const colors = ["#60a5fa", "#7dd3fc", "#a7f3d0", "#c4b5fd", "#fdba74", "#f9a8d4", "#93c5fd", "#86efac"];
+
+    return (
+        <div className="mda-analysis-pie-chart" aria-label={chart.title}>
+            <svg viewBox="0 0 220 220" role="img">
+                <title>{chart.title}</title>
+                {chart.data.map((item, index) => {
+                    const interaction = createChartInteraction(chart, item, dataset);
+                    const start = ((cumulativeValues[index - 1] || 0) / total) * Math.PI * 2 - Math.PI / 2;
+                    const end = (cumulativeValues[index] / total) * Math.PI * 2 - Math.PI / 2;
+                    const largeArc = end - start > Math.PI ? 1 : 0;
+                    const startPoint = { x: 110 + Math.cos(start) * 92, y: 110 + Math.sin(start) * 92 };
+                    const endPoint = { x: 110 + Math.cos(end) * 92, y: 110 + Math.sin(end) * 92 };
+                    const path = `M 110 110 L ${startPoint.x} ${startPoint.y} A 92 92 0 ${largeArc} 1 ${endPoint.x} ${endPoint.y} Z`;
+                    return <path className="mda-analysis-svg-mark" key={item.label} d={path} fill={colors[index % colors.length]} role="button" tabIndex="0" aria-label={interaction.selectionLabel} {...interactiveMark(onSelect, interaction)} {...tooltipEvents(interaction)} />;
+                })}
+            </svg>
+        </div>
+    );
+}
+
+function ChartTooltip({ tooltip }) {
+    if (!tooltip) return null;
+    return (
+        <div className="mda-analysis-chart-tooltip" role="tooltip" style={{ left: tooltip.x, top: tooltip.y }}>
+            {tooltip.interaction.fields.map((field) => <span key={field.label}><small>{field.label}</small><strong>{field.value}</strong></span>)}
+        </div>
+    );
+}
+
+function Chart({ chart, dataset, onDrillDown }) {
+    const [tooltip, setTooltip] = useState(null);
     const rowIndices = uniqueRows(chart);
+    const selectPoint = (interaction) => onDrillDown(interaction.rowIndices, interaction.title, interaction.selectionLabel);
+    const positionTooltip = (event, interaction) => {
+        const container = event.currentTarget.closest(".mda-analysis-chart-visual");
+        if (!container) return;
+        const containerRect = container.getBoundingClientRect();
+        const targetRect = event.currentTarget.getBoundingClientRect();
+        const pointerX = Number.isFinite(event.clientX) && event.clientX > 0 ? event.clientX : targetRect.left + targetRect.width / 2;
+        const pointerY = Number.isFinite(event.clientY) && event.clientY > 0 ? event.clientY : targetRect.top;
+        setTooltip({ interaction, x: Math.min(Math.max(pointerX - containerRect.left, 105), containerRect.width - 105), y: Math.max(pointerY - containerRect.top - 10, 18) });
+    };
+    const tooltipEvents = (interaction) => ({
+        onMouseEnter: (event) => positionTooltip(event, interaction),
+        onMouseMove: (event) => positionTooltip(event, interaction),
+        onMouseLeave: () => setTooltip(null),
+        onFocus: (event) => positionTooltip(event, interaction),
+        onBlur: () => setTooltip(null)
+    });
+
     return (
         <article className="mda-analysis-chart-card">
             <div className="mda-analysis-chart-heading">
@@ -101,9 +183,13 @@ function Chart({ chart, onDrillDown }) {
                 <span className="mda-analysis-score">Evidence {Math.round(chart.score * 100)}</span>
             </div>
             <div className="mda-analysis-chart-title"><h3>{chart.title}</h3><p>{chart.subtitle}</p></div>
-            {chart.type === "bar" && <BarChart chart={chart} onDrillDown={onDrillDown} />}
-            {chart.type === "line" && <LineChart chart={chart} />}
-            {chart.type === "scatter" && <ScatterChart chart={chart} />}
+            <div className="mda-analysis-chart-visual">
+                {chart.type === "bar" && <BarChart chart={chart} dataset={dataset} onSelect={selectPoint} tooltipEvents={tooltipEvents} />}
+                {chart.type === "line" && <LineChart chart={chart} dataset={dataset} onSelect={selectPoint} tooltipEvents={tooltipEvents} />}
+                {chart.type === "scatter" && <ScatterChart chart={chart} dataset={dataset} onSelect={selectPoint} tooltipEvents={tooltipEvents} />}
+                {chart.type === "pie" && <PieChart chart={chart} dataset={dataset} onSelect={selectPoint} tooltipEvents={tooltipEvents} />}
+                <ChartTooltip tooltip={tooltip} />
+            </div>
             <button type="button" className="mda-analysis-drill-link" onClick={() => onDrillDown(rowIndices, chart.title)}>
                 View supporting records <span>→</span>
             </button>
@@ -144,8 +230,9 @@ function DrillDown({ selection, analysis, onClose }) {
             <aside className="mda-analysis-drawer" role="dialog" aria-modal="true" aria-labelledby="mda-analysis-drawer-title">
                 <header>
                     <div>
-                        <p>Underlying data</p>
+                        <p>Matching Records</p>
                         <h2 id="mda-analysis-drawer-title">{selection.title}</h2>
+                        {selection.selectionLabel && <div className="mda-analysis-drawer-selection"><small>Selection</small><strong>{selection.selectionLabel}</strong></div>}
                         <span>{selection.rowIndices.length} matching row{selection.rowIndices.length === 1 ? "" : "s"}</span>
                     </div>
                     <button type="button" onClick={onClose} aria-label="Close underlying data"><span aria-hidden="true">×</span></button>
@@ -178,7 +265,7 @@ function Analytics() {
     const analysis = useBusinessAnalysis(importedDataset);
     const viewModel = createExecutiveAnalysisViewModel(analysis);
 
-    const openRows = (rowIndices, title) => setDrillDown({ rowIndices: [...new Set(rowIndices)], title });
+    const openRows = (rowIndices, title, selectionLabel = null) => setDrillDown({ rowIndices: [...new Set(rowIndices)], title, selectionLabel });
     const toggleSection = (sectionId) => setOpenSections((current) => {
         const next = new Set(current);
         if (next.has(sectionId)) next.delete(sectionId);
@@ -228,6 +315,7 @@ function Analytics() {
 
     return (
         <section className="mda-app-page mda-analysis-page">
+            <div className="mda-analysis-executive-report">
             <header className="mda-analysis-hero">
                 <div>
                     <p>Business Analysis</p>
@@ -281,11 +369,12 @@ function Analytics() {
                     <span>Only charts selected by the existing ranking engine</span>
                 </div>
                 {viewModel.charts.length > 0
-                    ? <div className="mda-analysis-chart-grid">{viewModel.charts.map((chart) => <Chart key={chart.id} chart={chart} onDrillDown={openRows} />)}</div>
+                    ? <div className="mda-analysis-chart-grid">{viewModel.charts.map((chart) => <Chart key={chart.id} chart={chart} dataset={viewModel.dataset} onDrillDown={openRows} />)}</div>
                     : <div className="mda-analysis-no-charts"><strong>No decision-useful chart was found.</strong><p>MDA intentionally skipped generic visualizations that would not help explain this dataset.</p></div>}
             </section>
+            </div>
 
-            <section className="mda-analysis-level-card" aria-labelledby="investigate-heading">
+            <section className="mda-analysis-level-card mda-analysis-investigate-level" aria-labelledby="investigate-heading">
                 <div className="mda-analysis-section-heading">
                     <div><p>04 · Let me investigate.</p><h2 id="investigate-heading">Investigate Further</h2></div>
                     <span>Technical details stay collapsed until needed</span>
