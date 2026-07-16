@@ -3,14 +3,13 @@ import { NavLink, Outlet, useLocation } from "react-router-dom";
 import AppIcon from "./AppIcon";
 import WorkflowProgress from "./WorkflowProgress";
 import "../styles/application.css";
+import "../styles/workspace.css";
 
 const navigation = [
     { label: "Dashboard", to: "/dashboard", icon: "dashboard" },
-    { label: "Upload Workbook", to: "/upload", icon: "upload" },
-    { label: "Analytics", to: "/analytics", icon: "analytics" },
-    { label: "Templates", to: "/templates", icon: "templates" },
-    { label: "Database Connections", to: "/database-connections", icon: "connection" },
-    { label: "Import History", to: "/import-history", icon: "history" },
+    { label: "New Upload", to: "/upload", icon: "upload" },
+    { label: "Workbooks", to: "/workbooks", icon: "workbook" },
+    { label: "Connections", to: "/connections", icon: "connection" },
     { label: "Settings", to: "/settings", icon: "settings" }
 ];
 
@@ -68,7 +67,7 @@ function AppLayout() {
                 <header className="mda-app-topbar">
                     <div>
                         <span className="mda-app-mobile-mark">MDA</span>
-                        <span className="mda-app-environment"><i /> Application workspace</span>
+                        <span className="mda-app-environment"><i /> Workbook workspace</span>
                     </div>
                     <span className="mda-app-topbar-note">Your operational data stays under your control</span>
                 </header>

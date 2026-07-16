@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 import AuthField from "../components/AuthField";
 import AuthLayout from "../components/AuthLayout";
@@ -27,14 +27,11 @@ function Login() {
     const [form, setForm] = useState({ email: "", password: "", remember: false });
     const [errors, setErrors] = useState({});
     const [touched, setTouched] = useState({});
-    const [status, setStatus] = useState("");
 
     const handleChange = (event) => {
         const { name, type, checked, value } = event.target;
         const nextForm = { ...form, [name]: type === "checkbox" ? checked : value };
         setForm(nextForm);
-        setStatus("");
-
         if (touched[name]) {
             setErrors(validateLogin(nextForm));
         }
@@ -52,7 +49,6 @@ function Login() {
         setTouched({ email: true, password: true });
 
         if (Object.keys(validationErrors).length > 0) {
-            setStatus("");
             return;
         }
 
@@ -98,12 +94,11 @@ function Login() {
                         <input name="remember" type="checkbox" checked={form.remember} onChange={handleChange} />
                         <span>Remember me</span>
                     </label>
-                    <button className="mda-auth-text-button" type="button" onClick={() => setStatus("Password recovery will be implemented with authentication.")}>Forgot password?</button>
+                    <Link className="mda-auth-text-button" to="/forgot-password">Forgot password?</Link>
                 </div>
 
                 <button className="mda-auth-submit" type="submit">Log in</button>
 
-                {status && <p className="mda-auth-status" role="status">{status}</p>}
             </form>
         </AuthLayout>
     );

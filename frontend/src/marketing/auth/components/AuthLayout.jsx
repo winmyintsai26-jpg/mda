@@ -21,9 +21,14 @@ function AuthLayout({ eyebrow, title, description, children, alternateText, alte
                         </Link>
 
                         <div className="mda-auth-context-copy">
-                            <p>Built for manufacturing workflows</p>
-                            <h2>Clean data starts with clarity.</h2>
-                            <span>Understand workbook structure, validate what matters, and deliver trusted data without surrendering control.</span>
+                            <p>Your workbook workspace</p>
+                            <h2>Every workbook. One clear place.</h2>
+                            <span>Preview, templates, business analysis, import history, and destinations stay organized around the data you are working with.</span>
+                        </div>
+
+                        <div className="mda-auth-workspace-preview" aria-hidden="true">
+                            <span><i>XL</i><b>Order_July.xlsx</b><small>Ready</small></span>
+                            <span><i>XL</i><b>Inventory.xlsx</b><small>Editing</small></span>
                         </div>
 
                         <ul className="mda-auth-trust-list">

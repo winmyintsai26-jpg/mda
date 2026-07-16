@@ -565,3 +565,40 @@
 .mda-public-site .mda-auth-submit {
     border-radius: 14px;
 }
+
+/* Workbook-centered authentication foundation */
+.mda-public-site .mda-auth-page {
+    background:
+        radial-gradient(circle at 12% 8%, rgba(191,219,254,.58), transparent 28%),
+        #f7fbff;
+}
+
+.mda-public-site .mda-auth-shell {
+    min-height: 690px;
+    grid-template-columns: minmax(370px, .92fr) minmax(450px, 1.08fr);
+}
+
+.mda-public-site .mda-auth-context-panel {
+    padding: 44px;
+    box-shadow: inset 0 4px 0 rgba(147,197,253,.65);
+}
+
+.mda-public-site .mda-auth-context-copy { margin: auto 0 28px; }
+.mda-public-site .mda-auth-context-copy h2 { font-size: clamp(38px, 4vw, 52px); }
+.mda-public-site .mda-auth-workspace-preview { margin-bottom: 24px; display: grid; gap: 8px; }
+.mda-public-site .mda-auth-workspace-preview > span { min-height: 48px; padding: 0 12px; display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 10px; border: 1px solid rgba(147,197,253,.52); border-radius: 13px; background: rgba(255,255,255,.72); box-shadow: 0 8px 20px rgba(71,118,163,.06); }
+.mda-public-site .mda-auth-workspace-preview i { width: 28px; height: 28px; display: grid; place-items: center; border-radius: 8px; color: #2563eb; background: #dbeafe; font-size: 8px; font-style: normal; font-weight: 800; }
+.mda-public-site .mda-auth-workspace-preview b { color: #334155; font-size: 10px; font-weight: 700; }
+.mda-public-site .mda-auth-workspace-preview small { color: #397657; font-size: 8px; font-weight: 700; }
+.mda-public-site .mda-auth-form-panel { background: #fff; }
+.mda-public-site .mda-auth-card { width: min(100%, 460px); padding: 8px 0; }
+.mda-public-site .mda-auth-heading h1 { font-size: clamp(34px, 4vw, 44px); }
+.mda-public-site .mda-auth-form-note { padding: 11px 12px; display: flex; align-items: center; gap: 9px; border: 1px solid #d6eafb; border-radius: 11px; color: #66768b; background: #f8fbff; }
+.mda-public-site .mda-auth-form-note > span { width: 20px; height: 20px; display: grid; flex-shrink: 0; place-items: center; border-radius: 7px; color: #2563eb; background: #dbeafe; font-size: 9px; font-weight: 800; }
+.mda-public-site .mda-auth-form-note p { margin: 0; font-size: 10px; line-height: 1.5; }
+.mda-public-site .mda-auth-back-link { justify-self: center; color: #2563eb !important; font-size: 10px; font-weight: 700; }
+
+@media (max-width: 760px) {
+    .mda-public-site .mda-auth-shell { min-height: 0; grid-template-columns: 1fr; }
+    .mda-public-site .mda-auth-workspace-preview { display: none; }
+}
