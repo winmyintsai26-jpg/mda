@@ -4,6 +4,33 @@
     box-sizing: border-box;
 }
 
+/* Application readability pass */
+.dashboard-subtitle,
+.upload-card p,
+.import-header p,
+.import-card p,
+.preview-header p { font-size: 15px; line-height: 1.6; }
+.upload-card,
+.import-card,
+.import-summary-card { padding: 28px; }
+.upload-card h2,
+.import-card h2,
+.import-summary-card h2 { font-size: 21px; }
+.upload-card button,
+.import-page button,
+.preview-page button,
+.import-link-button { min-height: 46px; font-size: 14px; }
+.import-page input,
+.import-page select,
+.preview-page input,
+.preview-page select { min-height: 44px; font-size: 14px; }
+.import-form-grid label > span,
+.import-summary-grid span,
+.footer-info p { font-size: 13px; }
+.import-summary-grid strong,
+.schema-table,
+.comparison-row { font-size: 14px; }
+
 body {
     background: linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%);
     font-family: Inter, Arial, Helvetica, sans-serif;

@@ -5,11 +5,12 @@ import AppIcon from "../components/AppIcon";
 import EmptyState from "../components/EmptyState";
 import PageHeader from "../components/PageHeader";
 import WorkbookCard from "../components/WorkbookCard";
-import { workbooks } from "../data/workbooks";
+import { useWorkbooks } from "../../workbooks/WorkbookContext";
 
-const statuses = ["All", "Imported", "Editing", "Ready", "Waiting"];
+const statuses = ["All", "Imported", "Editing", "Ready"];
 
 function Workbooks() {
+    const { workbooks } = useWorkbooks();
     const [query, setQuery] = useState("");
     const [status, setStatus] = useState("All");
     const [sortBy, setSortBy] = useState("recent");
@@ -24,9 +25,9 @@ function Workbooks() {
         return [...matches].sort((left, right) => {
             if (sortBy === "name") return left.name.localeCompare(right.name);
             if (sortBy === "rows") return right.rows - left.rows;
-            return workbooks.indexOf(left) - workbooks.indexOf(right);
+            return new Date(right.modifiedAt) - new Date(left.modifiedAt);
         });
-    }, [query, sortBy, status]);
+    }, [query, sortBy, status, workbooks]);
     const clearFilters = () => {
         setQuery("");
         setStatus("All");
@@ -38,7 +39,7 @@ function Workbooks() {
             <PageHeader
                 eyebrow="Workbook library"
                 title="Workbooks"
-                description="Each workbook keeps its preview, reusable template, business analysis, import history, and destination together."
+                description="Your permanent workspace for analyzed Excel files, completed imports, and future database analyses."
                 action={(
                     <Link className="mda-workspace-primary-button" to="/upload">
                         <AppIcon name="plus" size={18} /> New Upload
@@ -74,7 +75,16 @@ function Workbooks() {
                 </div>
             </div>
 
-            {visibleWorkbooks.length > 0 ? (
+            {workbooks.length === 0 ? (
+                <div className="mda-workbook-filter-empty">
+                    <EmptyState
+                        icon="workbook"
+                        title="Your first Workbook starts with an analysis"
+                        description="Upload and analyze an Excel file, then choose Yes when MDA asks whether to save the analysis."
+                        action={<Link className="mda-workspace-primary-button" to="/upload"><AppIcon name="upload" size={18} /> Analyze a Workbook</Link>}
+                    />
+                </div>
+            ) : visibleWorkbooks.length > 0 ? (
                 <div className="mda-workbook-grid">
                     {visibleWorkbooks.map((workbook) => <WorkbookCard key={workbook.id} workbook={workbook} />)}
                 </div>

@@ -2,18 +2,19 @@ import { Link } from "react-router-dom";
 
 import AppIcon from "../components/AppIcon";
 import PageHeader from "../components/PageHeader";
+import EmptyState from "../components/EmptyState";
 import QuickActionCard from "../components/QuickActionCard";
 import SectionCard from "../components/SectionCard";
 import WorkbookCard from "../components/WorkbookCard";
-import { workbooks } from "../data/workbooks";
+import { useWorkbooks } from "../../workbooks/WorkbookContext";
 
 const quickActions = [
     { label: "New Upload", description: "Analyze and prepare a new workbook", icon: "upload", to: "/upload" },
-    { label: "Connections", description: "Review destination database connections", icon: "connection", to: "/connections" },
-    { label: "Settings", description: "Manage workspace preferences", icon: "settings", to: "/settings" }
+    { label: "Workbooks", description: "Resume saved analyses and imports", icon: "workbook", to: "/workbooks" }
 ];
 
 function AppDashboard() {
+    const { workbooks } = useWorkbooks();
     return (
         <section className="mda-app-page mda-workspace-page mda-dashboard-workspace">
             <PageHeader
@@ -33,9 +34,9 @@ function AppDashboard() {
                 description="Your most recently updated workbook workspaces"
                 action={<Link className="mda-workspace-text-link" to="/workbooks">View all workbooks <span>→</span></Link>}
             >
-                <div className="mda-workbook-grid is-dashboard">
+                {workbooks.length > 0 ? <div className="mda-workbook-grid is-dashboard">
                     {workbooks.slice(0, 3).map((workbook) => <WorkbookCard compact key={workbook.id} workbook={workbook} />)}
-                </div>
+                </div> : <EmptyState icon="workbook" title="No saved Workbooks yet" description="Analyze an Excel file and save it as a Workbook to continue from this dashboard." action={<Link className="mda-workspace-primary-button" to="/upload">Start an analysis</Link>} />}
             </SectionCard>
 
             <section className="mda-workspace-quick-section" aria-labelledby="dashboard-quick-actions">

@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useUpload } from "../context/UploadContext";
 import { normalizePreviewValue } from "../utils/previewModel";
 import { createSourceRowSignatures } from "../saved-layouts/models/rowIdentity";
+import { useWorkbooks } from "../workbooks/WorkbookContext";
 
 const detectColumnType = (values) => {
     const nonEmpty = values.filter((v) => v != null && String(v).trim() !== "");
@@ -634,6 +635,7 @@ const InsertColumnModal = memo(function InsertColumnModal({
 
 function Preview() {
     const navigate = useNavigate();
+    const { workbooks, saveWorkbook } = useWorkbooks();
     const {
         table,
         setTable,
@@ -644,7 +646,8 @@ function Preview() {
         selectedWorksheet,
         setSelectedWorksheet,
         worksheetTables,
-        setWorksheetTables
+        setWorksheetTables,
+        activeWorkbookId
     } = useUpload();
 
     const [selectedRowIndexes, setSelectedRowIndexes] = useState(() => new Set());
@@ -1892,13 +1895,25 @@ function Preview() {
                             type="button"
                             className="primary"
                             onClick={() => {
-                                setTable({
+                                const savedTable = {
                                     ...displayTable,
                                     previewState: {
                                         ...(displayTable.previewState || {}),
                                         columnWidths
                                     }
-                                });
+                                };
+                                setTable(savedTable);
+                                const workbook = workbooks.find((item) => item.id === activeWorkbookId);
+                                if (workbook) {
+                                    saveWorkbook({
+                                        ...workbook,
+                                        status: "Ready",
+                                        workflowStep: 3,
+                                        validationStatus: selectedAnalysisTable?.validation?.isValid ? "Valid" : "Needs review",
+                                        lastActivity: "Preview reviewed and saved",
+                                        snapshot: { ...workbook.snapshot, table: savedTable, analysisTables, selectedTableIndex, selectedWorksheet, worksheetTables }
+                                    });
+                                }
                                 navigate("/import");
                             }}
                         >

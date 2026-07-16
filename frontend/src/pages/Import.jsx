@@ -6,10 +6,12 @@ import { API_BASE_URL } from "../config/api";
 import RememberLayoutDialog from "../saved-layouts/components/RememberLayoutDialog";
 import { createSavedLayout } from "../saved-layouts/models/savedLayout";
 import { savedLayoutService } from "../saved-layouts/services/savedLayoutService";
+import { useWorkbooks } from "../workbooks/WorkbookContext";
 
 function Import() {
     const navigate = useNavigate();
-    const { table, fileName, selectedWorksheet, analysisTables, selectedTableIndex, setImportedDataset } = useUpload();
+    const { workbooks, saveWorkbook } = useWorkbooks();
+    const { table, fileName, selectedWorksheet, analysisTables, selectedTableIndex, analysisResult, worksheetTables, activeWorkbookId, setActiveWorkbookId, setImportedDataset } = useUpload();
 
     const [connection, setConnection] = useState({
         host: "localhost",
@@ -345,7 +347,7 @@ function Import() {
             }
 
             setImportResult(payload);
-            setImportedDataset({
+            const importedDataset = {
                 name: table?.title || selectedAnalysisTable?.title || selectedTable || "Imported dataset",
                 fileName,
                 worksheet: selectedWorksheet || "",
@@ -358,7 +360,33 @@ function Import() {
                 rows: table.rows.map((row) => row.map((value) => String(value ?? ""))),
                 importedAt: new Date().toISOString(),
                 insertedRowCount: payload.insertedRowCount
-            });
+            };
+            setImportedDataset(importedDataset);
+            if (activeWorkbookId) {
+                const current = workbooks.find((item) => item.id === activeWorkbookId);
+                if (current) {
+                    const saved = saveWorkbook({
+                        ...current,
+                        status: "Imported",
+                        workflowStep: 5,
+                        analysisStatus: "Ready",
+                        destination: { provider: "mysql", database: selectedDatabase, table: selectedTable },
+                        lastActivity: `Import completed with ${payload.insertedRowCount?.toLocaleString("en-US") || table.rows.length} rows`,
+                        snapshot: {
+                            ...current.snapshot,
+                            fileName,
+                            analysisResult,
+                            analysisTables,
+                            selectedTableIndex,
+                            selectedWorksheet,
+                            worksheetTables,
+                            table,
+                            importedDataset
+                        }
+                    });
+                    setActiveWorkbookId(saved.id);
+                }
+            }
             setLayoutDialogStep("success");
             setLayoutName("");
             setLayoutError("");

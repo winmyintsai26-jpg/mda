@@ -1,5 +1,7 @@
 import { createContext, useContext, useMemo, useState } from "react";
 
+/* eslint-disable react-refresh/only-export-components */
+
 const UploadContext = createContext();
 
 export function UploadProvider({ children }) {
@@ -11,6 +13,7 @@ export function UploadProvider({ children }) {
     const [selectedWorksheet, setSelectedWorksheet] = useState(null);
     const [worksheetTables, setWorksheetTables] = useState({});  // Store edits per worksheet
     const [importedDataset, setImportedDataset] = useState(null);
+    const [activeWorkbookId, setActiveWorkbookId] = useState(null);
 
     const contextValue = useMemo(() => ({
         table,
@@ -28,7 +31,9 @@ export function UploadProvider({ children }) {
         worksheetTables,
         setWorksheetTables,
         importedDataset,
-        setImportedDataset
+        setImportedDataset,
+        activeWorkbookId,
+        setActiveWorkbookId
     }), [
         table,
         fileName,
@@ -37,7 +42,8 @@ export function UploadProvider({ children }) {
         analysisResult,
         selectedWorksheet,
         worksheetTables,
-        importedDataset
+        importedDataset,
+        activeWorkbookId
     ]);
 
     return (

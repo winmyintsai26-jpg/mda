@@ -1,137 +1,86 @@
-import { Link, useParams, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 
+import { useUpload } from "../../context/UploadContext";
+import { useWorkbooks } from "../../workbooks/WorkbookContext";
 import AppIcon from "../components/AppIcon";
 import EmptyState from "../components/EmptyState";
 import OverviewCard from "../components/OverviewCard";
 import SectionCard from "../components/SectionCard";
 import StatusBadge from "../components/StatusBadge";
-import { findWorkbook } from "../data/workbooks";
 
-const tabs = [
+const baseTabs = [
     { id: "overview", label: "Overview" },
     { id: "preview", label: "Preview" },
-    { id: "template", label: "Template" },
-    { id: "analysis", label: "Business Analysis" },
+    { id: "validation", label: "Validation" },
+    { id: "analysis", label: "Analysis" },
     { id: "history", label: "Import History" },
-    { id: "import", label: "Import Again" }
+    { id: "activity", label: "Activity" }
 ];
 
-function OverviewTab({ workbook, onTabChange }) {
-    const cards = [
-        { label: "Current Status", value: workbook.status, detail: `Workflow step ${workbook.workflowStep} of 5`, icon: "clock", tone: "green" },
-        { label: "Rows", value: workbook.rows.toLocaleString("en-US"), detail: "Across analyzed tables", icon: "rows", tone: "orange" },
-        { label: "Worksheets", value: workbook.worksheets.toLocaleString("en-US"), detail: "Detected in this workbook", icon: "sheet", tone: "cyan" },
-        { label: "Destination", value: workbook.destination.split(" · ")[0], detail: workbook.destination.split(" · ")[1] || "Not selected", icon: "connection", tone: "purple" }
-    ];
-
-    return (
-        <>
-            <section className="mda-workbook-continue-panel" aria-labelledby="continue-workflow-heading">
-                <div className="mda-workbook-continue-copy">
-                    <span><AppIcon name="workflow" size={22} /></span>
-                    <div><p>Continue workflow</p><h2 id="continue-workflow-heading">{workbook.continueLabel}</h2><small>{workbook.continueDescription}</small></div>
-                </div>
-                <div className="mda-workbook-step-track" aria-label={`Workflow step ${workbook.workflowStep} of 5`}>
-                    {["Upload", "Preview", "Template", "Import", "Analysis"].map((step, index) => <span className={index < workbook.workflowStep ? "is-complete" : ""} key={step}><i />{step}</span>)}
-                </div>
-                <button className="mda-workspace-primary-button" type="button" onClick={() => onTabChange(workbook.continueTab)}>{workbook.continueLabel}<span aria-hidden="true">→</span></button>
-            </section>
-
-            <div className="mda-workspace-overview-grid">
-                {cards.map((card) => <OverviewCard key={card.label} {...card} />)}
-            </div>
-
-            <div className="mda-workbook-overview-lower">
-                <SectionCard className="mda-workbook-activity-card" eyebrow="Recent changes" title="Last Activity" description="What happened in this workbook workspace">
-                    <ol className="mda-workbook-activity-list">
-                        {workbook.activities.map((activity) => <li className={`is-${activity.tone}`} key={`${activity.title}-${activity.time}`}><i /><div><strong>{activity.title}</strong><p>{activity.detail}</p></div><time>{activity.time}</time></li>)}
-                    </ol>
-                </SectionCard>
-                <SectionCard className="mda-workbook-readiness-card" eyebrow="Workspace details" title="Readiness" description="Saved configuration and report status">
-                    <dl className="mda-workbook-readiness-list">
-                        <div><dt>Template</dt><dd><span>{workbook.templateName}</span><StatusBadge status={workbook.templateStatus}>{workbook.templateStatus}</StatusBadge></dd></div>
-                        <div><dt>Business Analysis</dt><dd><span>Executive report</span><StatusBadge status={workbook.analysisStatus}>{workbook.analysisStatus}</StatusBadge></dd></div>
-                        <div><dt>Last imported</dt><dd><span>{workbook.lastImported}</span></dd></div>
-                        <div><dt>Last modified</dt><dd><span>{workbook.modified}</span></dd></div>
-                    </dl>
-                    <div className="mda-workbook-compact-actions">
-                        <button type="button" onClick={() => onTabChange("preview")}>Preview</button>
-                        <button type="button" onClick={() => onTabChange("analysis")}>Analysis</button>
-                        <button type="button" onClick={() => onTabChange("import")}>Import Again</button>
-                    </div>
-                </SectionCard>
-            </div>
-        </>
-    );
-}
-
-function WorkspaceTab({ activeTab, workbook }) {
-    const content = {
-        preview: {
-            icon: "sheet",
-            title: "Preview workspace",
-            description: "The reviewed workbook structure, tables, and column edits will appear here.",
-            action: <Link className="mda-workspace-secondary-button" to="/preview">Open current Preview workflow</Link>
-        },
-        template: {
-            icon: "templates",
-            title: workbook.templateName,
-            description: `Template status: ${workbook.templateStatus}. Saved layout configuration will be managed inside this workbook.`,
-            action: <StatusBadge status={workbook.templateStatus}>{workbook.templateStatus}</StatusBadge>
-        },
-        analysis: {
-            icon: "analytics",
-            title: "Business Analysis",
-            description: "Executive summary, key findings, visual evidence, and investigation tools will live here.",
-            action: <Link className="mda-workspace-secondary-button" to="/analytics">Open current analysis</Link>
-        },
-        history: {
-            icon: "history",
-            title: "Import History",
-            description: "Completed imports, validation outcomes, row counts, and destinations will appear here.",
-            action: <StatusBadge tone="neutral">1 recent import</StatusBadge>
-        },
-        import: {
-            icon: "upload",
-            title: "Import this workbook again",
-            description: "A future backend will reuse the workbook template and destination while keeping the user in this workspace.",
-            action: <Link className="mda-workspace-primary-button" to="/upload"><AppIcon name="upload" size={17} /> Start new upload</Link>
-        }
-    };
-    const selected = content[activeTab];
-
-    return (
-        <SectionCard className="mda-workbook-tab-placeholder" eyebrow={workbook.name} icon={selected.icon} title={selected.title} description={selected.description}>
-            <EmptyState icon={selected.icon} title="Workspace UI ready" description="This frontend foundation is ready to receive workbook-specific data when backend integration is added." action={selected.action} />
-        </SectionCard>
-    );
+function dateTime(value) {
+    return value ? new Intl.DateTimeFormat("en-US", { dateStyle: "medium", timeStyle: "short" }).format(new Date(value)) : "Not available";
 }
 
 function WorkbookDetails() {
     const { workbookId } = useParams();
+    const navigate = useNavigate();
     const [searchParams, setSearchParams] = useSearchParams();
-    const workbook = findWorkbook(workbookId);
+    const { workbooks } = useWorkbooks();
+    const upload = useUpload();
+    const workbook = workbooks.find((item) => item.id === workbookId);
+
+    if (!workbook) {
+        return <section className="mda-app-page mda-workspace-page"><EmptyState icon="workbook" title="Workbook not found" description="This workbook may have been removed from the local workspace." action={<Link className="mda-workspace-primary-button" to="/workbooks">Back to Workbooks</Link>} /></section>;
+    }
+
+    const tabs = workbook.sourceType === "database" ? [...baseTabs, { id: "connection", label: "Connection" }] : baseTabs;
     const requestedTab = searchParams.get("tab");
     const activeTab = tabs.some((tab) => tab.id === requestedTab) ? requestedTab : "overview";
-    const changeTab = (tabId) => setSearchParams(tabId === "overview" ? {} : { tab: tabId });
+    const snapshot = workbook.snapshot || {};
+    const validationTables = snapshot.analysisTables || [];
+    const validTables = validationTables.filter((table) => table.validation?.isValid).length;
+    const issueTables = Math.max(validationTables.length - validTables, 0);
+
+    const restoreAndOpen = (path) => {
+        upload.setFileName(snapshot.fileName || workbook.name);
+        upload.setAnalysisResult(snapshot.analysisResult || null);
+        upload.setAnalysisTables(snapshot.analysisTables || []);
+        upload.setSelectedTableIndex(snapshot.selectedTableIndex ?? null);
+        upload.setSelectedWorksheet(snapshot.selectedWorksheet || null);
+        upload.setWorksheetTables(snapshot.worksheetTables || {});
+        upload.setTable(snapshot.table || null);
+        upload.setImportedDataset(snapshot.importedDataset || null);
+        upload.setActiveWorkbookId(workbook.id);
+        navigate(path);
+    };
+
+    const overviewCards = [
+        { label: "Current Status", value: workbook.status, detail: `Workflow step ${workbook.workflowStep || 1} of 5`, icon: "clock", tone: "green" },
+        { label: "Rows", value: (workbook.rows || 0).toLocaleString("en-US"), detail: "Across detected tables", icon: "rows", tone: "orange" },
+        { label: "Worksheets", value: (workbook.worksheets || 0).toLocaleString("en-US"), detail: "Included in this workspace", icon: "sheet", tone: "cyan" },
+        { label: "Validation", value: workbook.validationStatus || "Pending", detail: `${validationTables.length} detected tables`, icon: "test", tone: "purple" }
+    ];
 
     return (
         <section className="mda-app-page mda-workspace-page mda-workbook-details-page">
-            <nav className="mda-workbook-breadcrumb" aria-label="Breadcrumb">
-                <Link to="/workbooks">Workbooks</Link><span>/</span><strong>{workbook.name}</strong>
-            </nav>
+            <nav className="mda-workbook-breadcrumb" aria-label="Breadcrumb"><Link to="/workbooks">Workbooks</Link><span>/</span><strong>{workbook.name}</strong></nav>
             <header className="mda-workbook-detail-header">
-                <div className="mda-workbook-detail-identity">
-                    <span><AppIcon name="workbook" size={28} /></span>
-                    <div><StatusBadge status={workbook.status}>{workbook.status}</StatusBadge><h1>{workbook.name}</h1><p>Last modified {workbook.modified}</p></div>
-                </div>
-                <Link className="mda-workspace-secondary-button" to="/upload"><AppIcon name="plus" size={17} /> New Upload</Link>
+                <div className="mda-workbook-detail-identity"><span><AppIcon name="workbook" size={28} /></span><div><StatusBadge status={workbook.status}>{workbook.status}</StatusBadge><h1>{workbook.name}</h1><p>Last modified {dateTime(workbook.modifiedAt)}</p></div></div>
+                <button className="mda-workspace-primary-button" type="button" onClick={() => restoreAndOpen(snapshot.importedDataset ? "/analytics" : "/preview")}>Continue workflow <span>→</span></button>
             </header>
-            <nav className="mda-workbook-tabs" aria-label="Workbook sections">
-                {tabs.map((tab) => <button className={activeTab === tab.id ? "is-active" : ""} key={tab.id} type="button" onClick={() => changeTab(tab.id)} aria-current={activeTab === tab.id ? "page" : undefined}>{tab.label}</button>)}
-            </nav>
+            <nav className="mda-workbook-tabs" aria-label="Workbook sections">{tabs.map((tab) => <button className={activeTab === tab.id ? "is-active" : ""} key={tab.id} type="button" onClick={() => setSearchParams(tab.id === "overview" ? {} : { tab: tab.id })}>{tab.label}</button>)}</nav>
             <div className="mda-workbook-tab-content">
-                {activeTab === "overview" ? <OverviewTab workbook={workbook} onTabChange={changeTab} /> : <WorkspaceTab activeTab={activeTab} workbook={workbook} />}
+                {activeTab === "overview" && <>
+                    <section className="mda-workbook-continue-panel"><div className="mda-workbook-continue-copy"><span><AppIcon name="workflow" size={22} /></span><div><p>Recommended next step</p><h2>{snapshot.importedDataset ? "Review Business Analysis" : "Continue Preview"}</h2><small>Resume from the exact saved workbook state.</small></div></div><button className="mda-workspace-primary-button" type="button" onClick={() => restoreAndOpen(snapshot.importedDataset ? "/analytics" : "/preview")}>Open workspace <span>→</span></button></section>
+                    <div className="mda-workspace-overview-grid">{overviewCards.map((card) => <OverviewCard key={card.label} {...card} />)}</div>
+                    <SectionCard eyebrow="Workspace" title="Last Activity" description="The latest saved state for this workbook"><div className="mda-workbook-activity-list"><strong>{workbook.lastActivity}</strong><p>{dateTime(workbook.modifiedAt)}</p></div></SectionCard>
+                </>}
+                {activeTab === "preview" && <SectionCard eyebrow="Saved state" title="Preview" description="Reopen the analyzed tables, column edits, and worksheet selection."><button className="mda-workspace-primary-button" type="button" onClick={() => restoreAndOpen("/preview")}>Open saved Preview</button></SectionCard>}
+                {activeTab === "validation" && <SectionCard eyebrow="Structure checks" title="Validation" description="Validation results captured when this Workbook was saved."><div className="mda-workspace-overview-grid"><OverviewCard label="Detected tables" value={String(validationTables.length)} detail="Across the workbook" icon="sheet" /><OverviewCard label="Valid tables" value={String(validTables)} detail="Ready to continue" icon="test" tone="green" /><OverviewCard label="Need review" value={String(issueTables)} detail="Require user confirmation" icon="clock" tone="orange" /></div></SectionCard>}
+                {activeTab === "analysis" && (snapshot.importedDataset ? <SectionCard eyebrow="Decision support" title="Business Analysis" description="Open the saved dataset in the standard Business Analysis experience."><button className="mda-workspace-primary-button" type="button" onClick={() => restoreAndOpen("/analytics")}>Open Business Analysis</button></SectionCard> : <EmptyState icon="analytics" title="Business Analysis is not available yet" description="Complete the import to generate the standard Business Analysis for this Workbook." action={<button className="mda-workspace-primary-button" type="button" onClick={() => restoreAndOpen("/preview")}>Continue workflow</button>} />)}
+                {activeTab === "history" && <SectionCard eyebrow="Traceability" title="Import History" description="Completed imports associated with this Workbook.">{snapshot.importedDataset ? <dl className="mda-workbook-readiness-list"><div><dt>Destination</dt><dd>{snapshot.importedDataset.destination?.database}.{snapshot.importedDataset.destination?.table}</dd></div><div><dt>Imported</dt><dd>{dateTime(snapshot.importedDataset.importedAt)}</dd></div><div><dt>Rows inserted</dt><dd>{snapshot.importedDataset.insertedRowCount?.toLocaleString("en-US") || workbook.rows}</dd></div></dl> : <p>No imports have been completed for this Workbook.</p>}</SectionCard>}
+                {activeTab === "activity" && <SectionCard eyebrow="Timeline" title="Activity" description="How this workspace reached its current state."><ol className="mda-workbook-activity-list"><li className="is-blue"><i /><div><strong>{workbook.lastActivity}</strong><p>{dateTime(workbook.modifiedAt)}</p></div></li><li className="is-neutral"><i /><div><strong>Workbook created</strong><p>{dateTime(workbook.createdAt)}</p></div></li></ol></SectionCard>}
+                {activeTab === "connection" && <SectionCard eyebrow="Database source" title="Connection Information" description="Passwords are never stored in a Workbook."><dl className="mda-workbook-readiness-list">{Object.entries(workbook.connection || {}).filter(([key]) => key !== "password").map(([key, value]) => <div key={key}><dt>{key}</dt><dd>{String(value)}</dd></div>)}</dl></SectionCard>}
             </div>
         </section>
     );

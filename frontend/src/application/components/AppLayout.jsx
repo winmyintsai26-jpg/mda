@@ -8,9 +8,7 @@ import "../styles/workspace.css";
 const navigation = [
     { label: "Dashboard", to: "/dashboard", icon: "dashboard" },
     { label: "New Upload", to: "/upload", icon: "upload" },
-    { label: "Workbooks", to: "/workbooks", icon: "workbook" },
-    { label: "Connections", to: "/connections", icon: "connection" },
-    { label: "Settings", to: "/settings", icon: "settings" }
+    { label: "Workbooks", to: "/workbooks", icon: "workbook" }
 ];
 
 function AppLayout() {
@@ -49,16 +47,11 @@ function AppLayout() {
                     ))}
                 </nav>
 
-                <NavLink className={({ isActive }) => `mda-app-nav-link mda-app-help-link${isActive ? " is-active" : ""}`} to="/help">
-                    <AppIcon name="help" />
-                    <span>Help</span>
-                </NavLink>
-
                 <div className="mda-app-account">
                     <span className="mda-app-avatar" aria-hidden="true">SM</span>
                     <span>
                         <strong>MDA Workspace</strong>
-                        <small>Account UI coming soon</small>
+                        <small>Local workspace</small>
                     </span>
                 </div>
             </aside>
