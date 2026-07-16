@@ -584,6 +584,35 @@
     .mda-workbook-continue-panel > .mda-workspace-primary-button { width: 100%; grid-column: auto; }
 }
 
+.mda-workspace-primary-button:disabled { opacity: .48; cursor: not-allowed; transform: none; box-shadow: none; }
+.mda-profile-save-success { margin: 22px 0 -12px; padding: 12px 15px; display: flex; align-items: center; gap: 8px; border: 1px solid #bfe6d3; border-radius: 12px; color: #18704a; background: #f0fbf5; font-size: 13px; font-weight: 700; }
+.mda-profile-form { max-width: 760px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+.mda-profile-form label { display: grid; gap: 8px; color: #52647a; font-size: 13px; font-weight: 700; }
+.mda-profile-form input { width: 100%; min-height: 48px; padding: 0 14px; border: 1px solid #d6eafb; border-radius: 11px; outline: none; color: #334155; background: #fbfdff; font: inherit; font-size: 14px; }
+.mda-profile-form input:focus { border-color: #60a5fa; box-shadow: 0 0 0 3px rgba(191,219,254,.5); }
+.mda-profile-form input[readonly] { color: #7f8da0; background: #f3f6f9; }
+.mda-profile-form small { color: #8b98aa; font-size: 11px; font-weight: 500; line-height: 1.45; }
+.mda-profile-theme-options { margin: 0; padding: 0; border: 0; }
+.mda-profile-theme-options legend { margin-bottom: 12px; color: #52647a; font-size: 13px; font-weight: 750; }
+.mda-profile-theme-options { display: grid; grid-template-columns: repeat(2, minmax(0, 300px)); gap: 16px; }
+.mda-profile-theme-options label { position: relative; padding: 16px; display: grid; gap: 7px; border: 1px solid #d6eafb; border-radius: 15px; color: #334155; background: #fff; cursor: pointer; }
+.mda-profile-theme-options label:hover { border-color: #93c5fd; }
+.mda-profile-theme-options label.is-selected { border-color: #60a5fa; box-shadow: 0 0 0 3px rgba(191,219,254,.42); }
+.mda-profile-theme-options input { position: absolute; top: 14px; right: 14px; accent-color: #3b82f6; }
+.mda-profile-theme-options strong { font-size: 14px; }
+.mda-profile-theme-options small { color: #7f8da0; font-size: 12px; }
+.mda-profile-theme-preview { height: 70px; padding: 10px; display: grid; grid-template-columns: 28% 1fr; grid-template-rows: 14px 1fr; gap: 7px; border: 1px solid #e5eaf2; border-radius: 10px; background: #f7f9fc; }
+.mda-profile-theme-preview i { border-radius: 4px; background: #fff; box-shadow: 0 2px 5px rgba(71,85,105,.08); }
+.mda-profile-theme-preview i:first-child { grid-row: 1 / -1; background: #e8eef8; }
+.mda-profile-theme-preview.is-dark { border-color: #374151; background: #111827; }
+.mda-profile-theme-preview.is-dark i { background: #1f2937; box-shadow: none; }
+.mda-profile-theme-preview.is-dark i:first-child { background: #293548; }
+
+@media (max-width: 760px) {
+    .mda-profile-form,
+    .mda-profile-theme-options { grid-template-columns: 1fr; }
+}
+
 @media (max-width: 520px) {
     .mda-workbook-filter-chips { display: grid; grid-template-columns: repeat(2, 1fr); }
     .mda-workbook-filter-chips button { justify-content: space-between; }

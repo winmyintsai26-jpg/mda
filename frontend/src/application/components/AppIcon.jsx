@@ -5,6 +5,7 @@ const iconPaths = {
             <path d="M5.5 9v11h13V9M9.5 20v-6h5v6" />
         </>
     ),
+    check: <path d="m5 12.5 4.2 4.2L19 7" />,
     analytics: (
         <>
             <path d="M5 19V11M12 19V5M19 19v-8" />

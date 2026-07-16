@@ -1,0 +1,169 @@
+:root,
+:root[data-theme="soft-light"] {
+    --mda-theme-bg: #f7f9fc;
+    --mda-theme-card: #ffffff;
+    --mda-theme-border: #e5eaf2;
+    --mda-theme-text: #1f2937;
+    --mda-theme-muted: #6b7280;
+    --mda-theme-subtle: #f1f5f9;
+    --mda-theme-input: #fbfdff;
+}
+
+:root[data-theme="soft-dark"] {
+    --mda-theme-bg: #111827;
+    --mda-theme-card: #1f2937;
+    --mda-theme-border: #374151;
+    --mda-theme-text: #f3f4f6;
+    --mda-theme-muted: #9ca3af;
+    --mda-theme-subtle: #273449;
+    --mda-theme-input: #182234;
+}
+
+html,
+body,
+#root,
+.mda-app-shell,
+.mda-app-workspace,
+.mda-public-site,
+.mda-auth-page {
+    background-color: var(--mda-theme-bg);
+    color: var(--mda-theme-muted);
+    transition: background-color 220ms ease, color 220ms ease;
+}
+
+:root[data-theme="soft-light"] body { background: #f7f9fc; }
+:root[data-theme="soft-light"] .mda-app-shell { background: #f7f9fc; }
+
+:root[data-theme="soft-dark"] body,
+:root[data-theme="soft-dark"] .dashboard,
+:root[data-theme="soft-dark"] .preview-page,
+:root[data-theme="soft-dark"] .import-page,
+:root[data-theme="soft-dark"] .mda-app-workspace,
+:root[data-theme="soft-dark"] .mda-public-site,
+:root[data-theme="soft-dark"] .mda-auth-page {
+    background: #111827 !important;
+    color: #9ca3af;
+}
+
+:root[data-theme="soft-dark"] .mda-app-sidebar,
+:root[data-theme="soft-dark"] .mda-app-topbar,
+:root[data-theme="soft-dark"] .mda-app-workflow-progress,
+:root[data-theme="soft-dark"] .mda-workspace-section-card,
+:root[data-theme="soft-dark"] .mda-workbook-card,
+:root[data-theme="soft-dark"] .mda-workbook-toolbar,
+:root[data-theme="soft-dark"] .mda-workbook-detail-header,
+:root[data-theme="soft-dark"] .mda-workbook-tabs,
+:root[data-theme="soft-dark"] .mda-workspace-overview-card,
+:root[data-theme="soft-dark"] .mda-workbook-selection-toolbar,
+:root[data-theme="soft-dark"] .mda-save-workbook-dialog,
+:root[data-theme="soft-dark"] .mda-workbook-delete-dialog,
+:root[data-theme="soft-dark"] .upload-area,
+:root[data-theme="soft-dark"] .file-selected,
+:root[data-theme="soft-dark"] .import-shell,
+:root[data-theme="soft-dark"] .import-card,
+:root[data-theme="soft-dark"] .import-summary-card,
+:root[data-theme="soft-dark"] .preview-page-header,
+:root[data-theme="soft-dark"] .worksheet-tabs,
+:root[data-theme="soft-dark"] .preview-table-container,
+:root[data-theme="soft-dark"] .mda-analysis-hero,
+:root[data-theme="soft-dark"] .mda-analysis-level-card,
+:root[data-theme="soft-dark"] .mda-analysis-summary-grid article,
+:root[data-theme="soft-dark"] .mda-analysis-kpi-grid button,
+:root[data-theme="soft-dark"] .mda-analysis-insight-grid button,
+:root[data-theme="soft-dark"] .mda-analysis-finding-list article,
+:root[data-theme="soft-dark"] .mda-analysis-chart-card,
+:root[data-theme="soft-dark"] .mda-analysis-accordion,
+:root[data-theme="soft-dark"] .mda-analysis-quality-list button,
+:root[data-theme="soft-dark"] .mda-analysis-relationship-list button,
+:root[data-theme="soft-dark"] .mda-analysis-drawer,
+:root[data-theme="soft-dark"] .mda-analysis-empty-card,
+:root[data-theme="soft-dark"] .mda-public-navbar,
+:root[data-theme="soft-dark"] .mda-public-page-hero,
+:root[data-theme="soft-dark"] .mda-public-section,
+:root[data-theme="soft-dark"] .mda-public-footer,
+:root[data-theme="soft-dark"] .mda-public-feature-card,
+:root[data-theme="soft-dark"] .mda-public-story-card,
+:root[data-theme="soft-dark"] .mda-public-placeholder-card,
+:root[data-theme="soft-dark"] .mda-auth-card,
+:root[data-theme="soft-dark"] .mda-auth-form-panel,
+:root[data-theme="soft-dark"] .mda-profile-theme-options label {
+    border-color: #374151 !important;
+    background: #1f2937 !important;
+    color: #f3f4f6;
+    box-shadow: 0 10px 28px rgba(7, 12, 23, .18);
+}
+
+:root[data-theme="soft-dark"] .mda-workspace-page-header,
+:root[data-theme="soft-dark"] .mda-workspace-section-card > header,
+:root[data-theme="soft-dark"] .mda-app-sidebar,
+:root[data-theme="soft-dark"] .mda-app-topbar,
+:root[data-theme="soft-dark"] .mda-app-bottom-navigation,
+:root[data-theme="soft-dark"] .mda-workbook-card-details > div,
+:root[data-theme="soft-dark"] .mda-workbook-last-activity,
+:root[data-theme="soft-dark"] table th,
+:root[data-theme="soft-dark"] table td {
+    border-color: #374151 !important;
+}
+
+:root[data-theme="soft-dark"] h1,
+:root[data-theme="soft-dark"] h2,
+:root[data-theme="soft-dark"] h3,
+:root[data-theme="soft-dark"] strong,
+:root[data-theme="soft-dark"] dt,
+:root[data-theme="soft-dark"] .mda-workbook-card-name a,
+:root[data-theme="soft-dark"] .mda-app-brand,
+:root[data-theme="soft-dark"] .mda-workspace-page-header h1,
+:root[data-theme="soft-dark"] .mda-analysis-hero h1,
+:root[data-theme="soft-dark"] .import-header h1,
+:root[data-theme="soft-dark"] .dashboard-header h1 {
+    color: #f3f4f6 !important;
+}
+
+:root[data-theme="soft-dark"] p,
+:root[data-theme="soft-dark"] small,
+:root[data-theme="soft-dark"] dd,
+:root[data-theme="soft-dark"] span,
+:root[data-theme="soft-dark"] .mda-workspace-page-header > div:first-child > span {
+    border-color: #374151;
+}
+
+:root[data-theme="soft-dark"] input,
+:root[data-theme="soft-dark"] select,
+:root[data-theme="soft-dark"] textarea,
+:root[data-theme="soft-dark"] .mda-workbook-search,
+:root[data-theme="soft-dark"] .mda-analysis-accordion-toggle,
+:root[data-theme="soft-dark"] .mda-workbook-card-progress,
+:root[data-theme="soft-dark"] .mda-workbook-continue,
+:root[data-theme="soft-dark"] .mda-workspace-secondary-button {
+    border-color: #374151 !important;
+    color: #f3f4f6 !important;
+    background: #182234 !important;
+}
+
+:root[data-theme="soft-dark"] input::placeholder,
+:root[data-theme="soft-dark"] textarea::placeholder { color: #778297; }
+:root[data-theme="soft-dark"] input[readonly] { color: #9ca3af !important; background: #273449 !important; }
+
+:root[data-theme="soft-dark"] table,
+:root[data-theme="soft-dark"] thead,
+:root[data-theme="soft-dark"] tbody,
+:root[data-theme="soft-dark"] tr,
+:root[data-theme="soft-dark"] th,
+:root[data-theme="soft-dark"] td {
+    color: #d1d5db;
+    background-color: #1f2937 !important;
+}
+
+:root[data-theme="soft-dark"] .mda-app-nav-link { color: #b5becb !important; }
+:root[data-theme="soft-dark"] .mda-app-nav-link:hover { color: #f3f4f6 !important; background: #273449; }
+:root[data-theme="soft-dark"] .mda-app-nav-link.is-active { border-color: #3f5270; color: #60a5fa !important; background: #24334a; }
+:root[data-theme="soft-dark"] .mda-workbook-card:hover { border-color: #4b6487 !important; }
+:root[data-theme="soft-dark"] .mda-profile-save-success { border-color: #315a49; color: #86efac; background: #1d3b31; }
+:root[data-theme="soft-dark"] .mda-analysis-chart-tooltip { color: #f3f4f6; background: #111827; }
+:root[data-theme="soft-dark"] .mda-analysis-drawer-overlay,
+:root[data-theme="soft-dark"] .mda-save-workbook-overlay,
+:root[data-theme="soft-dark"] .mda-workbook-delete-overlay { background: rgba(7, 12, 23, .7); }
+
+@media (prefers-reduced-motion: reduce) {
+    html, body, #root, .mda-app-shell, .mda-app-workspace { transition: none; }
+}

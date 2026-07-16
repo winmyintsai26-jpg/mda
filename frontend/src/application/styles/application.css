@@ -96,6 +96,24 @@
     gap: 6px;
 }
 
+.mda-app-bottom-navigation {
+    margin-top: auto;
+    padding-top: 18px;
+    border-top: 1px solid #e5eaf2;
+}
+
+.mda-app-bottom-navigation .mda-app-nav-link { position: relative; }
+.mda-app-bottom-navigation .mda-app-nav-link small {
+    margin-left: auto;
+    max-width: 92px;
+    overflow: hidden;
+    color: #8a96a7;
+    font-size: 10px;
+    font-weight: 600;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
 .mda-app-navigation > p {
     margin: 0 10px 10px;
     color: #a0a9b7;

@@ -2,17 +2,23 @@ import { NavLink, Outlet, useLocation } from "react-router-dom";
 
 import AppIcon from "./AppIcon";
 import WorkflowProgress from "./WorkflowProgress";
+import { usePreferences } from "../../preferences/PreferencesContext";
 import "../styles/application.css";
 import "../styles/workspace.css";
 
 const navigation = [
-    { label: "Home", to: "/", icon: "home", end: true },
     { label: "Dashboard", to: "/dashboard", icon: "dashboard" },
     { label: "Workbooks", to: "/workbooks", icon: "workbook" }
 ];
 
+const bottomNavigation = [
+    { label: "Home", to: "/", icon: "home", end: true },
+    { label: "Profile", to: "/profile", icon: "user" }
+];
+
 function AppLayout() {
     const { pathname } = useLocation();
+    const { preferences } = usePreferences();
     const isWorkbookWorkflow = ["/upload", "/preview", "/import", "/analytics"].includes(pathname);
 
     return (
@@ -31,7 +37,7 @@ function AppLayout() {
                 </NavLink>
 
                 <nav className="mda-app-navigation" aria-label="Application navigation">
-                    <p>Workspace</p>
+                    <p>Main Navigation</p>
                     {navigation.map((item) => (
                         <NavLink
                             className={({ isActive }) => {
@@ -47,13 +53,17 @@ function AppLayout() {
                     ))}
                 </nav>
 
+                <nav className="mda-app-navigation mda-app-bottom-navigation" aria-label="Personal navigation">
+                    {bottomNavigation.map((item) => <NavLink className={({ isActive }) => `mda-app-nav-link${isActive ? " is-active" : ""}`} key={item.to} to={item.to} end={item.end}><AppIcon name={item.icon} /><span>{item.label}</span>{item.to === "/profile" && <small>{preferences.displayName}</small>}</NavLink>)}
+                </nav>
+
             </aside>
 
             <div className={`mda-app-workspace${isWorkbookWorkflow ? " has-workflow" : ""}`}>
                 <header className="mda-app-topbar">
                     <div>
                         <span className="mda-app-mobile-mark">MDA</span>
-                        <span className="mda-app-environment"><i /> Workbook workspace</span>
+                        <span className="mda-app-environment"><i /> {preferences.displayName}&apos;s workspace</span>
                     </div>
                 </header>
                 {isWorkbookWorkflow && <WorkflowProgress pathname={pathname} />}
