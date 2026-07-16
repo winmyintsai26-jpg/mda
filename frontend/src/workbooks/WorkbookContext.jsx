@@ -71,7 +71,17 @@ export function WorkbookProvider({ children }) {
         });
     }, []);
 
-    const value = useMemo(() => ({ workbooks, saveWorkbook, removeWorkbook }), [removeWorkbook, saveWorkbook, workbooks]);
+    const removeWorkbooks = useCallback((workbookIds) => {
+        const ids = new Set(workbookIds);
+        setWorkbooks((current) => {
+            const next = current.filter((item) => !ids.has(item.id));
+            persist(next);
+            Promise.all([...ids].map((workbookId) => workbookStorage.remove(workbookId))).catch(() => {});
+            return next;
+        });
+    }, []);
+
+    const value = useMemo(() => ({ workbooks, saveWorkbook, removeWorkbook, removeWorkbooks }), [removeWorkbook, removeWorkbooks, saveWorkbook, workbooks]);
     return <WorkbookContext.Provider value={value}>{children}</WorkbookContext.Provider>;
 }
 

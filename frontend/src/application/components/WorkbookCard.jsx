@@ -2,16 +2,19 @@ import { Link } from "react-router-dom";
 
 import AppIcon from "./AppIcon";
 import StatusBadge from "./StatusBadge";
-function WorkbookCard({ compact = false, workbook }) {
+function WorkbookCard({ compact = false, isSelected = false, onSelect, selectionMode = false, workbook }) {
     const destination = workbook.destination?.database || workbook.destination?.split?.(" · ")[0] || "Not selected";
     const modified = workbook.modifiedAt ? new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }).format(new Date(workbook.modifiedAt)) : "Recently";
     const continueLabel = workbook.workflowStep >= 4 ? "Review Analysis" : "Continue Preview";
     const continueTab = workbook.workflowStep >= 4 ? "analysis" : "preview";
 
     return (
-        <article className={`mda-workbook-card${compact ? " is-compact" : ""}`}>
+        <article className={`mda-workbook-card${compact ? " is-compact" : ""}${selectionMode ? " is-selectable" : ""}${isSelected ? " is-selected" : ""}`}>
             <div className="mda-workbook-card-heading">
-                <span className="mda-workbook-file-icon"><AppIcon name="workbook" size={24} /></span>
+                <div className="mda-workbook-card-leading">
+                    {selectionMode && <label className="mda-workbook-card-checkbox" onClick={(event) => event.stopPropagation()}><input type="checkbox" checked={isSelected} onChange={() => onSelect(workbook.id)} aria-label={`Select ${workbook.name}`} /><span aria-hidden="true">✓</span></label>}
+                    <span className="mda-workbook-file-icon"><AppIcon name="workbook" size={24} /></span>
+                </div>
                 <StatusBadge status={workbook.status}>{workbook.status}</StatusBadge>
             </div>
             <div className="mda-workbook-card-name">

@@ -10,10 +10,13 @@ import { useWorkbooks } from "../../workbooks/WorkbookContext";
 const statuses = ["All", "Imported", "Editing", "Ready"];
 
 function Workbooks() {
-    const { workbooks } = useWorkbooks();
+    const { workbooks, removeWorkbooks } = useWorkbooks();
     const [query, setQuery] = useState("");
     const [status, setStatus] = useState("All");
     const [sortBy, setSortBy] = useState("recent");
+    const [selectionMode, setSelectionMode] = useState(false);
+    const [selectedIds, setSelectedIds] = useState(() => new Set());
+    const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
     const visibleWorkbooks = useMemo(() => {
         const normalizedQuery = query.trim().toLowerCase();
         const matches = workbooks.filter((workbook) => {
@@ -32,6 +35,28 @@ function Workbooks() {
         setQuery("");
         setStatus("All");
         setSortBy("recent");
+    };
+    const toggleSelection = (workbookId) => setSelectedIds((current) => {
+        const next = new Set(current);
+        if (next.has(workbookId)) next.delete(workbookId);
+        else next.add(workbookId);
+        return next;
+    });
+    const cancelSelection = () => {
+        setSelectedIds(new Set());
+        setSelectionMode(false);
+    };
+    const visibleIds = visibleWorkbooks.map((workbook) => workbook.id);
+    const allVisibleSelected = visibleIds.length > 0 && visibleIds.every((id) => selectedIds.has(id));
+    const selectAllVisible = () => setSelectedIds((current) => {
+        const next = new Set(current);
+        visibleIds.forEach((id) => allVisibleSelected ? next.delete(id) : next.add(id));
+        return next;
+    });
+    const confirmDelete = () => {
+        removeWorkbooks([...selectedIds]);
+        setShowDeleteConfirmation(false);
+        cancelSelection();
     };
 
     return (
@@ -71,9 +96,14 @@ function Workbooks() {
                             return <button className={status === option ? "is-active" : ""} type="button" key={option} onClick={() => setStatus(option)} aria-pressed={status === option}>{option}<span>{count}</span></button>;
                         })}
                     </div>
-                    <p><strong>{visibleWorkbooks.length}</strong> of {workbooks.length} workbooks</p>
+                    <div className="mda-workbook-toolbar-summary"><p><strong>{visibleWorkbooks.length}</strong> of {workbooks.length} workbooks</p>{workbooks.length > 0 && !selectionMode && <button type="button" className="mda-workbook-select-mode" onClick={() => setSelectionMode(true)}>Select Workbooks</button>}</div>
                 </div>
             </div>
+
+            {selectionMode && <div className={`mda-workbook-selection-toolbar${selectedIds.size ? " has-selection" : ""}`} role="region" aria-label="Workbook selection">
+                <div><strong>{selectedIds.size ? `${selectedIds.size} selected` : "Select Workbooks"}</strong><span>{selectedIds.size ? "Choose Delete Selected or continue selecting cards." : "Select one or more cards to manage them together."}</span></div>
+                <div className="mda-workbook-selection-actions"><button type="button" onClick={selectAllVisible}>{allVisibleSelected ? "Clear All" : "Select All"}</button>{selectedIds.size > 0 && <button type="button" className="is-danger" onClick={() => setShowDeleteConfirmation(true)}>Delete Selected</button>}<button type="button" onClick={cancelSelection}>Cancel Selection</button></div>
+            </div>}
 
             {workbooks.length === 0 ? (
                 <div className="mda-workbook-filter-empty">
@@ -86,7 +116,7 @@ function Workbooks() {
                 </div>
             ) : visibleWorkbooks.length > 0 ? (
                 <div className="mda-workbook-grid">
-                    {visibleWorkbooks.map((workbook) => <WorkbookCard key={workbook.id} workbook={workbook} />)}
+                    {visibleWorkbooks.map((workbook) => <WorkbookCard key={workbook.id} workbook={workbook} selectionMode={selectionMode} isSelected={selectedIds.has(workbook.id)} onSelect={toggleSelection} />)}
                 </div>
             ) : (
                 <div className="mda-workbook-filter-empty">
@@ -98,6 +128,8 @@ function Workbooks() {
                     />
                 </div>
             )}
+
+            {showDeleteConfirmation && <div className="mda-workbook-delete-overlay" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && setShowDeleteConfirmation(false)}><section className="mda-workbook-delete-dialog" role="dialog" aria-modal="true" aria-labelledby="delete-workbooks-title"><span aria-hidden="true"><AppIcon name="trash" size={23} /></span><p>Delete Workbooks</p><h2 id="delete-workbooks-title">Remove {selectedIds.size} selected workbook{selectedIds.size === 1 ? "" : "s"}?</h2><div>This removes the saved workspace data from this browser. The original Excel files and destination database data will not be deleted.</div><footer><button type="button" className="mda-workspace-secondary-button" onClick={() => setShowDeleteConfirmation(false)}>Keep Workbooks</button><button type="button" className="mda-workbook-confirm-delete" onClick={confirmDelete}>Delete {selectedIds.size} Workbook{selectedIds.size === 1 ? "" : "s"}</button></footer></section></div>}
         </section>
     );
 }
