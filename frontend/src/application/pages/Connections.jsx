@@ -13,10 +13,10 @@ function Connections() {
     return (
         <section className="mda-app-page mda-workspace-page">
             <PageHeader
-                eyebrow="Data destinations"
-                title="Connections"
-                description="Manage the customer-controlled databases that receive approved workbook data."
-                action={<button className="mda-workspace-primary-button" type="button"><AppIcon name="plus" size={18} /> Add Connection</button>}
+                eyebrow="Connections"
+                title="Database Connections"
+                description="Manage where validated workbook data is imported."
+                action={<button className="mda-workspace-primary-button" type="button"><AppIcon name="plus" size={18} /> New Connection</button>}
             />
             <div className="mda-connection-summary"><span><i /> 3 connected</span><span>4 configured destinations</span><small>Placeholder connection data</small></div>
             <div className="mda-connection-grid">

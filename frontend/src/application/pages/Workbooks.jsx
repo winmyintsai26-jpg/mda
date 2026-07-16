@@ -62,9 +62,9 @@ function Workbooks() {
     return (
         <section className="mda-app-page mda-workspace-page">
             <PageHeader
-                eyebrow="Workbook library"
+                eyebrow="Workbooks"
                 title="Workbooks"
-                description="Your permanent workspace for analyzed Excel files, completed imports, and future database analyses."
+                description="Manage your uploaded workbooks and import history."
                 action={(
                     <Link className="mda-workspace-primary-button" to="/upload">
                         <AppIcon name="plus" size={18} /> New Upload

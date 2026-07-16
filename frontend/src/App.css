@@ -31,6 +31,23 @@
 .schema-table,
 .comparison-row { font-size: 14px; }
 
+.import-advanced-options {
+    margin-top: 16px;
+    border-top: 1px solid #e5edf5;
+}
+.import-advanced-options summary {
+    width: fit-content;
+    padding: 16px 0 2px;
+    color: #64748b;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 700;
+    list-style-position: inside;
+}
+.import-advanced-options summary:hover { color: #2563eb; }
+.import-advanced-options[open] summary { margin-bottom: 12px; color: #2563eb; }
+.import-advanced-options .import-form-grid { max-width: 360px; }
+
 body {
     background: linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%);
     font-family: Inter, Arial, Helvetica, sans-serif;

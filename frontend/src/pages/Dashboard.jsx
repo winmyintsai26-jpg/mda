@@ -202,18 +202,6 @@ function Dashboard() {
     return (
         <div className="dashboard">
             <div className="dashboard-grid" aria-hidden="true" />
-            <header className="dashboard-topbar">
-                <div className="dashboard-brand">
-                    <span className="dashboard-logo" aria-hidden="true">
-                        <span />
-                        <span />
-                        <span />
-                    </span>
-                    <span>MDA</span>
-                </div>
-                <span className="dashboard-workspace-label">Workbook workspace</span>
-            </header>
-
             <main className="dashboard-main">
                 <div className="dashboard-header">
                     <p className="dashboard-eyebrow">Workbook analysis</p>
@@ -227,21 +215,6 @@ function Dashboard() {
                     isAnalyzing={isAnalyzing}
                     onAnalyze={handleAnalyze}
                 />
-
-                <div className="dashboard-workflow" aria-label="MDA workbook workflow">
-                    {[
-                        ["01", "Upload"],
-                        ["02", "Analyze"],
-                        ["03", "Preview"],
-                        ["04", "Validate"],
-                        ["05", "Import"]
-                    ].map(([number, label], index) => (
-                        <div className={`dashboard-workflow-step ${index === 0 ? "is-active" : ""}`} key={label}>
-                            <span>{number}</span>
-                            <strong>{label}</strong>
-                        </div>
-                    ))}
-                </div>
             </main>
 
             {layoutMatch && (

@@ -455,10 +455,6 @@ function Import() {
                             <input value={connection.host} onChange={handleConnectionFieldChange("host")} />
                         </label>
                         <label>
-                            <span>Port</span>
-                            <input value={connection.port} onChange={handleConnectionFieldChange("port")} />
-                        </label>
-                        <label>
                             <span>Username</span>
                             <input value={connection.username} onChange={handleConnectionFieldChange("username")} />
                         </label>
@@ -467,6 +463,12 @@ function Import() {
                             <input type="password" value={connection.password} onChange={handleConnectionFieldChange("password")} />
                         </label>
                     </div>
+                    <details className="import-advanced-options">
+                        <summary>Advanced connection options</summary>
+                        <div className="import-form-grid single-row">
+                            <label><span>Port</span><input value={connection.port} onChange={handleConnectionFieldChange("port")} /></label>
+                        </div>
+                    </details>
                     <div className="import-actions-row import-connect-actions-row">
                         <button type="button" className="primary" onClick={handleConnect} disabled={isConnecting}>
                             <span className="button-content">

@@ -6,8 +6,8 @@ import "../styles/application.css";
 import "../styles/workspace.css";
 
 const navigation = [
+    { label: "Home", to: "/", icon: "home", end: true },
     { label: "Dashboard", to: "/dashboard", icon: "dashboard" },
-    { label: "New Upload", to: "/upload", icon: "upload" },
     { label: "Workbooks", to: "/workbooks", icon: "workbook" }
 ];
 
@@ -35,11 +35,11 @@ function AppLayout() {
                     {navigation.map((item) => (
                         <NavLink
                             className={({ isActive }) => {
-                                const isWorkflowActive = item.to === "/upload" && isWorkbookWorkflow;
-                                return `mda-app-nav-link${isActive || isWorkflowActive ? " is-active" : ""}`;
+                                return `mda-app-nav-link${isActive ? " is-active" : ""}`;
                             }}
                             key={item.to}
                             to={item.to}
+                            end={item.end}
                         >
                             <AppIcon name={item.icon} />
                             <span>{item.label}</span>
@@ -47,13 +47,6 @@ function AppLayout() {
                     ))}
                 </nav>
 
-                <div className="mda-app-account">
-                    <span className="mda-app-avatar" aria-hidden="true">SM</span>
-                    <span>
-                        <strong>MDA Workspace</strong>
-                        <small>Local workspace</small>
-                    </span>
-                </div>
             </aside>
 
             <div className={`mda-app-workspace${isWorkbookWorkflow ? " has-workflow" : ""}`}>
@@ -62,7 +55,6 @@ function AppLayout() {
                         <span className="mda-app-mobile-mark">MDA</span>
                         <span className="mda-app-environment"><i /> Workbook workspace</span>
                     </div>
-                    <span className="mda-app-topbar-note">Your operational data stays under your control</span>
                 </header>
                 {isWorkbookWorkflow && <WorkflowProgress pathname={pathname} />}
                 <main className="mda-app-content">

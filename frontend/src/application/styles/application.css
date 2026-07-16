@@ -31,7 +31,7 @@
     top: 0;
     z-index: 30;
     height: 100vh;
-    padding: 26px 18px 20px;
+    padding: 26px 18px 28px;
     display: flex;
     flex-direction: column;
     border-right: 1px solid #e0e5ed;
@@ -93,7 +93,7 @@
 
 .mda-app-navigation {
     display: grid;
-    gap: 4px;
+    gap: 6px;
 }
 
 .mda-app-navigation > p {

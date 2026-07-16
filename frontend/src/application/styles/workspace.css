@@ -632,6 +632,11 @@
 .mda-workbook-last-activity b { font-size: 11px; }
 .mda-workbook-continue { min-height: 48px; padding-inline: 15px; font-size: 13px; }
 
+/* Shared page rhythm: one calm spacing system for the primary application
+   destinations without changing their established titles or card layout. */
+.mda-workspace-page > .mda-workspace-section-card:first-of-type { margin-top: 36px; }
+.mda-workspace-page-header + .mda-workbook-toolbar { margin-top: 34px; }
+
 .mda-workbook-toolbar-summary { display: flex; align-items: center; gap: 14px; }
 .mda-workbook-toolbar-summary p { color: #96a1b0; font-size: 12px; white-space: nowrap; }
 .mda-workbook-toolbar-summary p strong { color: #52647a; font-size: 13px; }
