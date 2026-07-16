@@ -314,6 +314,84 @@ body,
 :root[data-theme="soft-dark"] .mda-public-story-card,
 :root[data-theme="soft-dark"] .mda-public-placeholder-card { border-color: #334155 !important; background: #1e293b !important; }
 
+/* Authentication pages use two coordinated dark workspace blocks. */
+:root[data-theme="soft-dark"] .mda-public-site .mda-auth-page {
+    background: radial-gradient(circle at 12% 8%, rgba(49, 71, 107, .34), transparent 30%), #111827 !important;
+}
+:root[data-theme="soft-dark"] .mda-public-site .mda-auth-shell {
+    border-color: #334155 !important;
+    background: #1e293b !important;
+    box-shadow: inset 0 4px 0 rgba(96, 165, 250, .18), 0 28px 64px rgba(5, 10, 20, .34);
+}
+:root[data-theme="soft-dark"] .mda-public-site .mda-auth-context-panel {
+    border-color: #3b4f6c !important;
+    color: #f3f4f6 !important;
+    background: radial-gradient(circle at 15% 15%, rgba(49, 71, 107, .72), transparent 42%), #243447 !important;
+    box-shadow: inset 0 4px 0 rgba(96, 165, 250, .22);
+}
+:root[data-theme="soft-dark"] .mda-public-site .mda-auth-context-grid {
+    opacity: .24;
+    background-image:
+        linear-gradient(rgba(148, 163, 184, .13) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(148, 163, 184, .13) 1px, transparent 1px);
+}
+:root[data-theme="soft-dark"] .mda-public-site .mda-auth-form-panel,
+:root[data-theme="soft-dark"] .mda-public-site .mda-auth-card { background: #1e293b !important; }
+
+:root[data-theme="soft-dark"] .mda-public-site .mda-auth-product-mark,
+:root[data-theme="soft-dark"] .mda-public-site .mda-auth-context-copy h2,
+:root[data-theme="soft-dark"] .mda-public-site .mda-auth-heading h1,
+:root[data-theme="soft-dark"] .mda-public-site .mda-auth-field > label {
+    color: #f3f4f6 !important;
+}
+:root[data-theme="soft-dark"] .mda-public-site .mda-auth-context-copy > span,
+:root[data-theme="soft-dark"] .mda-public-site .mda-auth-trust-list li,
+:root[data-theme="soft-dark"] .mda-public-site .mda-auth-heading > p:last-child,
+:root[data-theme="soft-dark"] .mda-public-site .mda-auth-field-message,
+:root[data-theme="soft-dark"] .mda-public-site .mda-auth-checkbox,
+:root[data-theme="soft-dark"] .mda-public-site .mda-auth-alternate {
+    color: #a8b3c5 !important;
+}
+:root[data-theme="soft-dark"] .mda-public-site .mda-auth-product-mark > span,
+:root[data-theme="soft-dark"] .mda-public-site .mda-auth-trust-list li > span,
+:root[data-theme="soft-dark"] .mda-public-site .mda-auth-form-note > span {
+    border-color: #415574;
+    color: #93c5fd;
+    background: #31476b;
+}
+:root[data-theme="soft-dark"] .mda-public-site .mda-auth-trust-list { border-color: #415574; }
+
+:root[data-theme="soft-dark"] .mda-public-site .mda-auth-workspace-preview > span,
+:root[data-theme="soft-dark"] .mda-public-site .mda-auth-form-note,
+:root[data-theme="soft-dark"] .mda-public-site .mda-auth-status {
+    border-color: #334155 !important;
+    color: #a8b3c5 !important;
+    background: #243447 !important;
+    box-shadow: 0 8px 20px rgba(5, 10, 20, .16);
+}
+:root[data-theme="soft-dark"] .mda-public-site .mda-auth-workspace-preview b { color: #f3f4f6; }
+:root[data-theme="soft-dark"] .mda-public-site .mda-auth-workspace-preview small { color: #86efac; }
+:root[data-theme="soft-dark"] .mda-public-site .mda-auth-workspace-preview i { color: #93c5fd; background: #31476b; }
+
+:root[data-theme="soft-dark"] .mda-public-site .mda-auth-input-wrap input {
+    border-color: #334155 !important;
+    color: #f3f4f6 !important;
+    background: #1a2537 !important;
+}
+:root[data-theme="soft-dark"] .mda-public-site .mda-auth-input-wrap input:hover { border-color: #415574 !important; }
+:root[data-theme="soft-dark"] .mda-public-site .mda-auth-input-wrap input:focus {
+    border-color: #60a5fa !important;
+    background: #202d40 !important;
+    box-shadow: 0 0 0 4px rgba(96, 165, 250, .18);
+}
+:root[data-theme="soft-dark"] .mda-public-site .mda-auth-input-wrap input::placeholder { color: #7f8da0; }
+:root[data-theme="soft-dark"] .mda-public-site .mda-auth-password-toggle { color: #a8b3c5; }
+:root[data-theme="soft-dark"] .mda-public-site .mda-auth-field.has-error .mda-auth-input-wrap input {
+    border-color: #b4535c !important;
+    background: #342630 !important;
+}
+:root[data-theme="soft-dark"] .mda-public-site .mda-auth-status { border-color: #315a49 !important; color: #86efac !important; background: #1d3b31 !important; }
+
 @media (prefers-reduced-motion: reduce) {
     html, body, #root, .mda-app-shell, .mda-app-workspace { transition: none; }
 }
