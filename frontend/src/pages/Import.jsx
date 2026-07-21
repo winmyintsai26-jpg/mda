@@ -30,6 +30,7 @@ function Import() {
     const [selectedDatabase, setSelectedDatabase] = useState("");
     const [selectedTable, setSelectedTable] = useState("");
     const [importResult, setImportResult] = useState(null);
+    const [importError, setImportError] = useState("");
     const [layoutDialogStep, setLayoutDialogStep] = useState(null);
     const [layoutName, setLayoutName] = useState("");
     const [layoutError, setLayoutError] = useState("");
@@ -221,6 +222,7 @@ function Import() {
 
         setIsConnecting(true);
         setConnectionError("");
+        setImportError("");
         setConnectionMessage("");
         setSelectedDatabase("");
         setSelectedTable("");
@@ -265,6 +267,7 @@ function Import() {
         setTables([]);
         setSchema([]);
         setConnectionError("");
+        setImportError("");
 
         if (!database) {
             return;
@@ -295,6 +298,7 @@ function Import() {
         setSelectedTable(nextTable);
         setSchema([]);
         setConnectionError("");
+        setImportError("");
 
         if (!nextTable || !selectedDatabase) {
             return;
@@ -327,7 +331,7 @@ function Import() {
         }
 
         setIsImporting(true);
-        setConnectionError("");
+        setImportError("");
         setImportResult(null);
 
         try {
@@ -393,7 +397,7 @@ function Import() {
             setLayoutError("");
             setLayoutSaveMessage("");
         } catch (error) {
-            setConnectionError(simplifyImportError(error.message));
+            setImportError(simplifyImportError(error.message));
         } finally {
             setIsImporting(false);
         }
@@ -592,6 +596,7 @@ function Import() {
                                     <span>{isImporting ? "Importing..." : "Import"}</span>
                                 </span>
                             </button>
+                            {importError && <p className="import-message error">{importError}</p>}
                             {importResult && (
                                 <p className="import-message success">
                                     {importSuccessMessage}
