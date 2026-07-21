@@ -346,7 +346,7 @@
     .mda-analysis-drill-link,
     .mda-analysis-chart-tooltip,
     .mda-analysis-finding-list article > button,
-    .mda-analysis-investigate-level,
+    .mda-analysis-quality-level,
     .mda-analysis-drawer-overlay { display: none !important; }
     .mda-analysis-page > :not(.mda-analysis-executive-report) { display: none !important; }
     .mda-analysis-executive-report { display: block !important; }

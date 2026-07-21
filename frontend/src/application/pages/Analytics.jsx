@@ -12,6 +12,12 @@ const numberFormatter = new Intl.NumberFormat("en-US", { maximumFractionDigits: 
 const percentFormatter = new Intl.NumberFormat("en-US", { style: "percent", maximumFractionDigits: 1 });
 const dateFormatter = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" });
 
+function formatValue(value, format) {
+    if (format === "percent") return percentFormatter.format(value);
+    if (format === "integer") return numberFormatter.format(Math.round(value));
+    return formatCompactNumber(value);
+}
+
 function uniqueRows(chart) {
     return [...new Set(chart.data.flatMap((item) => [
         ...(item.rowIndices || []),
@@ -287,35 +293,13 @@ function DrillDown({ selection, analysis, onClose }) {
     );
 }
 
-function InvestigationPanel({ id, title, description, count, isOpen, onToggle, children }) {
-    return (
-        <section className={`mda-analysis-accordion${isOpen ? " is-open" : ""}`}>
-            <button type="button" className="mda-analysis-accordion-toggle" onClick={() => onToggle(id)} aria-expanded={isOpen} aria-controls={`${id}-content`}>
-                <span className="mda-analysis-accordion-chevron" aria-hidden="true">›</span>
-                <span><strong>{title}</strong><small>{description}</small></span>
-                {count != null && <b>{count}</b>}
-            </button>
-            <div className="mda-analysis-accordion-animation" id={`${id}-content`} aria-hidden={!isOpen}>
-                <div><div className="mda-analysis-accordion-content">{children}</div></div>
-            </div>
-        </section>
-    );
-}
-
 function Analytics() {
     const { importedDataset } = useUpload();
     const [drillDown, setDrillDown] = useState(null);
-    const [openSections, setOpenSections] = useState(() => new Set());
     const analysis = useBusinessAnalysis(importedDataset);
     const viewModel = createExecutiveAnalysisViewModel(analysis);
 
     const openRows = (rowIndices, title, selectionLabel = null) => setDrillDown({ rowIndices: [...new Set(rowIndices)], title, selectionLabel });
-    const toggleSection = (sectionId) => setOpenSections((current) => {
-        const next = new Set(current);
-        if (next.has(sectionId)) next.delete(sectionId);
-        else next.add(sectionId);
-        return next;
-    });
 
     const exportSummary = () => {
         const report = {
@@ -387,25 +371,19 @@ function Analytics() {
                 </div>
             </section>
 
-            <section className="mda-analysis-level-card mda-analysis-findings-level" aria-labelledby="findings-heading">
+            {analysis.kpis.length > 0 && <section className="mda-analysis-level-card" aria-labelledby="key-metrics-heading">
                 <div className="mda-analysis-section-heading">
-                    <div><p>02 · Why does it matter?</p><h2 id="findings-heading">Key Findings</h2></div>
-                    <span>Ranked by decision importance</span>
+                    <div><p>02 · Key business metrics</p><h2 id="key-metrics-heading">KPI Cards</h2></div>
+                    <span>Automatically selected from the strongest numeric signals</span>
                 </div>
-                {viewModel.findings.length > 0 ? (
-                    <div className="mda-analysis-finding-list">
-                        {viewModel.findings.map((finding, index) => (
-                            <article key={finding.id}>
-                                <span className="mda-analysis-finding-number">{String(index + 1).padStart(2, "0")}</span>
-                                <div><strong>{finding.title}</strong><p>{finding.text}</p></div>
-                                <span className={`mda-analysis-importance is-${finding.importanceTone}`}>{finding.importanceLabel}</span>
-                                {finding.rowIndices.length > 0 && <button type="button" onClick={() => openRows(finding.rowIndices, finding.title)}>View details <span>→</span></button>}
-                            </article>
-                        ))}
-                    </div>
-                ) : <div className="mda-analysis-no-charts"><strong>No material findings need attention.</strong><p>The current dataset did not produce a high-value exception or business observation.</p></div>}
-                {viewModel.additionalFindingCount > 0 && <p className="mda-analysis-more-findings">{viewModel.additionalFindingCount} additional finding{viewModel.additionalFindingCount === 1 ? " is" : "s are"} available in the investigation panels below.</p>}
-            </section>
+                <div className="mda-analysis-kpi-grid">
+                    {analysis.kpis.map((kpi) => (
+                        <button type="button" key={kpi.id} onClick={() => openRows(kpi.rowIndices, kpi.label)}>
+                            <small>{kpi.question}</small><span>{kpi.label}</span><strong>{formatValue(kpi.value, kpi.format)}</strong>{kpi.secondary && <em>{kpi.secondary}</em>}<b>Inspect rows →</b>
+                        </button>
+                    ))}
+                </div>
+            </section>}
 
             <section className="mda-analysis-level-card" aria-labelledby="visual-evidence-heading">
                 <div className="mda-analysis-section-heading">
@@ -418,35 +396,15 @@ function Analytics() {
             </section>
             </div>
 
-            <section className="mda-analysis-level-card mda-analysis-investigate-level" aria-labelledby="investigate-heading">
+            {viewModel.qualityFindings.length > 0 && <section className="mda-analysis-level-card mda-analysis-quality-level" aria-labelledby="quality-heading">
                 <div className="mda-analysis-section-heading">
-                    <div><p>04 · Let me investigate.</p><h2 id="investigate-heading">Investigate Further</h2></div>
-                    <span>Technical details stay collapsed until needed</span>
+                    <div><p>Data confidence</p><h2 id="quality-heading">Data Quality</h2></div>
+                    <span>{viewModel.qualityFindings.length} observation{viewModel.qualityFindings.length === 1 ? "" : "s"}</span>
                 </div>
-                <div className="mda-analysis-accordion-list">
-                    <InvestigationPanel id="trust" title="Trust & Exceptions" description="Missing data, duplicates, outliers, and unusual observations" count={viewModel.qualityFindings.length} isOpen={openSections.has("trust")} onToggle={toggleSection}>
-                        {viewModel.qualityFindings.length > 0 ? <div className="mda-analysis-quality-list">{viewModel.qualityFindings.map((finding) => (
-                            <button type="button" key={finding.id} onClick={() => openRows(finding.rowIndices, finding.title)}><i className={finding.severity} /><span><strong>{finding.title}</strong><p>{finding.detail}</p></span><b>{finding.rowIndices.length > 0 ? `${finding.rowIndices.length} rows →` : "Review →"}</b></button>
-                        ))}</div> : <div className="mda-analysis-no-charts"><strong>No material quality issues detected.</strong><p>The imported data is complete enough for the available analysis.</p></div>}
-                    </InvestigationPanel>
-
-                    <InvestigationPanel id="relationships" title="Relationships" description="Strong numeric relationships discovered in the dataset" count={viewModel.relationships.length} isOpen={openSections.has("relationships")} onToggle={toggleSection}>
-                        {viewModel.relationships.length > 0 ? <div className="mda-analysis-relationship-list">{viewModel.relationships.map((relationship) => (
-                            <button type="button" key={relationship.id} onClick={() => openRows(uniqueRows(relationship), relationship.title)}><span><strong>{relationship.title}</strong><small>{relationship.subtitle}</small></span><b>Inspect records →</b></button>
-                        ))}</div> : <div className="mda-analysis-no-charts"><strong>No strong relationships were selected.</strong><p>The ranking engine did not find a numeric relationship valuable enough to present.</p></div>}
-                    </InvestigationPanel>
-
-                    <InvestigationPanel id="statistics" title="Statistics" description="Totals, averages, medians, minimums, and maximums" count={viewModel.statistics.length} isOpen={openSections.has("statistics")} onToggle={toggleSection}>
-                        {viewModel.statistics.length > 0 ? <div className="mda-analysis-statistics-wrap"><table><thead><tr><th>Metric</th><th>Total</th><th>Average</th><th>Median</th><th>Minimum</th><th>Maximum</th></tr></thead><tbody>{viewModel.statistics.map((metric) => (
-                            <tr key={metric.columnId}><th>{metric.columnName}</th><td>{formatCompactNumber(metric.total)}</td><td>{formatCompactNumber(metric.average)}</td><td>{formatCompactNumber(metric.median)}</td><td>{formatCompactNumber(metric.minimum)}</td><td>{formatCompactNumber(metric.maximum)}</td></tr>
-                        ))}</tbody></table></div> : <div className="mda-analysis-no-charts"><strong>No numeric statistics are available.</strong><p>This dataset does not contain a numeric column suitable for summary statistics.</p></div>}
-                    </InvestigationPanel>
-
-                    <InvestigationPanel id="underlying-data" title="Underlying Data" description="Trace every conclusion back to the imported records" count={viewModel.dataset.rows.length} isOpen={openSections.has("underlying-data")} onToggle={toggleSection}>
-                        <DataTable dataset={viewModel.dataset} limit={100} />
-                    </InvestigationPanel>
-                </div>
-            </section>
+                <div className="mda-analysis-quality-list">{viewModel.qualityFindings.map((finding) => (
+                    <button type="button" key={finding.id} onClick={() => finding.rowIndices.length > 0 && openRows(finding.rowIndices, finding.title)}><i className={finding.severity} /><span><strong>{finding.title}</strong><p>{finding.detail}</p></span>{finding.rowIndices.length > 0 && <b>{finding.rowIndices.length} rows →</b>}</button>
+                ))}</div>
+            </section>}
 
             <DrillDown selection={drillDown} analysis={analysis} onClose={() => setDrillDown(null)} />
         </section>
