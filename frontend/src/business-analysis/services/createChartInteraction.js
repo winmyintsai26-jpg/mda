@@ -35,13 +35,18 @@ export function createChartInteraction(chart, item, dataset) {
     const fields = [];
     let selectionLabel;
 
-    if (chart.type === "scatter") {
+    if (["groupedBar", "stackedBar"].includes(chart.type)) {
+        fields.push({ label: chart.meta?.categoryColumn || "Category", value: item.categoryLabel || item.label });
+        fields.push({ label: chart.meta?.seriesColumn || "Series", value: item.seriesLabel || "Value" });
+        fields.push({ label: chart.meta?.valueColumn || "Value", value: formatNumber(item.value) });
+        selectionLabel = `${item.categoryLabel || item.label} · ${item.seriesLabel || "Value"}`;
+    } else if (chart.type === "scatter") {
         const xLabel = chart.meta?.xColumn || "X value";
         const yLabel = chart.meta?.yColumn || "Y value";
         fields.push({ label: xLabel, value: formatNumber(item.x) });
         fields.push({ label: yLabel, value: formatNumber(item.y) });
         selectionLabel = `${xLabel}: ${formatNumber(item.x)} · ${yLabel}: ${formatNumber(item.y)}`;
-    } else if (chart.type === "line") {
+    } else if (["line", "area"].includes(chart.type)) {
         const date = formatDate(item.label);
         fields.push({ label: chart.meta?.dateColumn || "Date", value: date });
         fields.push({ label: chart.meta?.valueColumn || "Value", value: formatNumber(item.value) });
@@ -53,7 +58,7 @@ export function createChartInteraction(chart, item, dataset) {
         selectionLabel = label;
     }
 
-    if (chart.type !== "line") {
+    if (!["line", "area"].includes(chart.type)) {
         const date = dateContext(dataset, rowIndices);
         if (date) fields.push(date);
     }

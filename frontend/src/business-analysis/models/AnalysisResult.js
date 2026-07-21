@@ -8,7 +8,7 @@ export function createInitialAnalysisContext(source, options) {
             rows: source?.rows || [],
             importedAt: source?.importedAt || null
         },
-        options: { maxCharts: options.maxCharts ?? 5 }
+        options: { maxCharts: options.maxCharts ?? 3 }
     };
 }
 

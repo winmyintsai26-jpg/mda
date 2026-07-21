@@ -199,6 +199,11 @@ body,
     background: #243447 !important;
     box-shadow: 0 16px 34px rgba(5, 10, 20, .28);
 }
+:root[data-theme="soft-dark"] .mda-analysis-donut-hole { fill: #1e293b; }
+:root[data-theme="soft-dark"] .mda-analysis-executive-brief-card li > span { color: #93c5fd; background: #31476b; }
+:root[data-theme="soft-dark"] .mda-analysis-executive-brief-card li p,
+:root[data-theme="soft-dark"] .mda-analysis-chart-legend,
+:root[data-theme="soft-dark"] .mda-analysis-multi-row > span { color: #a8b3c5; }
 :root[data-theme="soft-dark"] .mda-profile-save-success { border-color: #315a49; color: #86efac; background: #1d3b31; }
 :root[data-theme="soft-dark"] .mda-analysis-chart-tooltip { color: #f3f4f6; background: #111827; }
 :root[data-theme="soft-dark"] .mda-analysis-drawer-overlay,

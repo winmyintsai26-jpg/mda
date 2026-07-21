@@ -4,11 +4,15 @@ import { chooseTimeGranularity, timeBucket } from "../utils/DateHelpers.js";
 export class TrendAnalyzer {
     analyze(context) {
         const { dataset } = context;
-        const numericProfile = selectPrimaryNumericProfile(dataset.profiles);
-        const numericByRow = new Map(numericProfile?.numericValues.map((item) => [item.rowIndex, item.value]) || []);
+        const numericProfiles = dataset.profiles
+            .filter((profile) => profile.kind === "numeric" && profile.numericValues.length >= 2 && new Set(profile.numericValues.map((item) => item.value)).size > 1)
+            .sort((left, right) => (selectPrimaryNumericProfile([left, right]) === right ? 1 : -1))
+            .slice(0, 4);
         const trends = dataset.profiles
             .filter((profile) => profile.kind === "date" && profile.dateValues.length >= 2)
-            .map((dateProfile) => this.createTrend(dateProfile, numericProfile, numericByRow))
+            .flatMap((dateProfile) => numericProfiles.length
+                ? numericProfiles.map((numericProfile) => this.createTrend(dateProfile, numericProfile, new Map(numericProfile.numericValues.map((item) => [item.rowIndex, item.value]))))
+                : [this.createTrend(dateProfile, null, new Map())])
             .filter(Boolean);
 
         return { ...context, trends };

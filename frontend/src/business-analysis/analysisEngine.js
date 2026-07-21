@@ -1,9 +1,12 @@
 import { CategoryAnalyzer } from "./analyzers/CategoryAnalyzer.js";
+import { CrossCategoryAnalyzer } from "./analyzers/CrossCategoryAnalyzer.js";
 import { DataQualityAnalyzer } from "./analyzers/DataQualityAnalyzer.js";
 import { DatasetAnalyzer } from "./analyzers/DatasetAnalyzer.js";
+import { DistributionAnalyzer } from "./analyzers/DistributionAnalyzer.js";
 import { InsightAnalyzer } from "./analyzers/InsightAnalyzer.js";
 import { KPIAnalyzer } from "./analyzers/KPIAnalyzer.js";
 import { OutlierAnalyzer } from "./analyzers/OutlierAnalyzer.js";
+import { PerformanceAnalyzer } from "./analyzers/PerformanceAnalyzer.js";
 import { RelationshipAnalyzer } from "./analyzers/RelationshipAnalyzer.js";
 import { TrendAnalyzer } from "./analyzers/TrendAnalyzer.js";
 import { ChartGenerator } from "./charts/ChartGenerator.js";
@@ -21,7 +24,10 @@ const datasetAnalyzer = new DatasetAnalyzer();
 const kpiAnalyzer = new KPIAnalyzer();
 const trendAnalyzer = new TrendAnalyzer();
 const categoryAnalyzer = new CategoryAnalyzer();
+const crossCategoryAnalyzer = new CrossCategoryAnalyzer();
 const relationshipAnalyzer = new RelationshipAnalyzer();
+const performanceAnalyzer = new PerformanceAnalyzer();
+const distributionAnalyzer = new DistributionAnalyzer();
 const dataQualityAnalyzer = new DataQualityAnalyzer();
 const outlierAnalyzer = new OutlierAnalyzer();
 const chartGenerator = new ChartGenerator();
@@ -42,8 +48,11 @@ export function metricGenerationStage(context) {
 export function chartGenerationStage(context) {
     const withTrends = trendAnalyzer.analyze(context);
     const withCategories = categoryAnalyzer.analyze(withTrends);
-    const withRelationships = relationshipAnalyzer.analyze(withCategories);
-    const generated = chartGenerator.analyze(withRelationships);
+    const withCrossCategories = crossCategoryAnalyzer.analyze(withCategories);
+    const withRelationships = relationshipAnalyzer.analyze(withCrossCategories);
+    const withComparisons = performanceAnalyzer.analyze(withRelationships);
+    const withDistributions = distributionAnalyzer.analyze(withComparisons);
+    const generated = chartGenerator.analyze(withDistributions);
     const ranked = chartRanker.analyze(generated);
     return { ...context, charts: ranked.charts };
 }

@@ -1,9 +1,12 @@
 import { CategoryAnalyzer } from "../analyzers/CategoryAnalyzer.js";
+import { CrossCategoryAnalyzer } from "../analyzers/CrossCategoryAnalyzer.js";
 import { DataQualityAnalyzer } from "../analyzers/DataQualityAnalyzer.js";
 import { DatasetAnalyzer } from "../analyzers/DatasetAnalyzer.js";
+import { DistributionAnalyzer } from "../analyzers/DistributionAnalyzer.js";
 import { InsightAnalyzer } from "../analyzers/InsightAnalyzer.js";
 import { KPIAnalyzer } from "../analyzers/KPIAnalyzer.js";
 import { OutlierAnalyzer } from "../analyzers/OutlierAnalyzer.js";
+import { PerformanceAnalyzer } from "../analyzers/PerformanceAnalyzer.js";
 import { RelationshipAnalyzer } from "../analyzers/RelationshipAnalyzer.js";
 import { TrendAnalyzer } from "../analyzers/TrendAnalyzer.js";
 import { ChartGenerator } from "../charts/ChartGenerator.js";
@@ -17,7 +20,10 @@ export function createDefaultAnalysisStages() {
         new KPIAnalyzer(),
         new TrendAnalyzer(),
         new CategoryAnalyzer(),
+        new CrossCategoryAnalyzer(),
         new RelationshipAnalyzer(),
+        new PerformanceAnalyzer(),
+        new DistributionAnalyzer(),
         new DataQualityAnalyzer(),
         new OutlierAnalyzer(),
         new ChartGenerator(),

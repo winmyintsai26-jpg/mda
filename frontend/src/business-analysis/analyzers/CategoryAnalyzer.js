@@ -4,11 +4,14 @@ import { isEmptyValue } from "../utils/ValueParsers.js";
 export class CategoryAnalyzer {
     analyze(context) {
         const { dataset } = context;
-        const numericProfile = selectPrimaryNumericProfile(dataset.profiles);
-        const numericByRow = new Map(numericProfile?.numericValues.map((item) => [item.rowIndex, item.value]) || []);
+        const primaryNumeric = selectPrimaryNumericProfile(dataset.profiles);
+        const numericProfiles = dataset.profiles
+            .filter((profile) => profile.kind === "numeric" && profile.numericValues.length >= 2 && new Set(profile.numericValues.map((item) => item.value)).size > 1)
+            .sort((left, right) => left === primaryNumeric ? -1 : right === primaryNumeric ? 1 : right.completeness - left.completeness)
+            .slice(0, 3);
         const categories = dataset.profiles
             .filter((profile) => profile.kind === "categorical" && profile.uniqueCount > 1)
-            .map((profile) => this.createCategoryAnalysis(dataset, profile, numericProfile, numericByRow))
+            .flatMap((profile) => (numericProfiles.length ? numericProfiles : [null]).map((numericProfile) => this.createCategoryAnalysis(dataset, profile, numericProfile, new Map(numericProfile?.numericValues.map((item) => [item.rowIndex, item.value]) || []))))
             .filter(Boolean);
 
         return { ...context, categories };

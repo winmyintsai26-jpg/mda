@@ -13,7 +13,10 @@ const percentFormatter = new Intl.NumberFormat("en-US", { style: "percent", maxi
 const dateFormatter = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" });
 
 function uniqueRows(chart) {
-    return [...new Set(chart.data.flatMap((item) => item.rowIndices || []))];
+    return [...new Set(chart.data.flatMap((item) => [
+        ...(item.rowIndices || []),
+        ...(item.series?.flatMap((series) => series.rowIndices || []) || [])
+    ]))];
 }
 
 function formatDateRange(dateRange) {
@@ -72,6 +75,7 @@ function LineChart({ chart, dataset, onSelect, tooltipEvents }) {
                 <title>{chart.title}</title>
                 <line x1={padding} y1={height - padding} x2={width - padding} y2={height - padding} />
                 <line x1={padding} y1={padding} x2={padding} y2={height - padding} />
+                {chart.type === "area" && <polygon className="mda-analysis-area-fill" points={`${padding},${height - padding} ${points.map((point) => `${point.x},${point.y}`).join(" ")} ${width - padding},${height - padding}`} />}
                 <polyline points={points.map((point) => `${point.x},${point.y}`).join(" ")} />
                 {points.map((point) => {
                     const interaction = createChartInteraction(chart, point, dataset);
@@ -141,8 +145,47 @@ function PieChart({ chart, dataset, onSelect, tooltipEvents }) {
                     const path = `M 110 110 L ${startPoint.x} ${startPoint.y} A 92 92 0 ${largeArc} 1 ${endPoint.x} ${endPoint.y} Z`;
                     return <path className="mda-analysis-svg-mark" key={item.label} d={path} fill={colors[index % colors.length]} role="button" tabIndex="0" aria-label={interaction.selectionLabel} {...interactiveMark(onSelect, interaction)} {...tooltipEvents(interaction)} />;
                 })}
+                {chart.type === "donut" && <circle className="mda-analysis-donut-hole" cx="110" cy="110" r="48" />}
             </svg>
         </div>
+    );
+}
+
+function MultiSeriesChart({ chart, dataset, onSelect, tooltipEvents }) {
+    const seriesLabels = chart.meta.seriesColumns || [...new Set(chart.data.flatMap((item) => (item.series || []).map((series) => series.label)))];
+    const colors = ["#60a5fa", "#a7f3d0", "#c4b5fd", "#fdba74", "#7dd3fc"];
+    const normalized = chart.data.map((item) => ({
+        label: item.label,
+        series: item.values
+            ? item.values.map((value, index) => ({ label: seriesLabels[index], value, rowIndices: item.rowIndices || [] }))
+            : item.series
+    }));
+    const maximum = Math.max(...normalized.flatMap((item) => chart.type === "stackedBar"
+        ? [item.series.reduce((sum, series) => sum + Math.abs(series.value), 0)]
+        : item.series.map((series) => Math.abs(series.value))), 1);
+
+    return (
+        <div className={`mda-analysis-multi-chart is-${chart.type}`} aria-label={chart.title}>
+            <div className="mda-analysis-chart-legend">{seriesLabels.map((label, index) => <span key={label}><i style={{ background: colors[index % colors.length] }} />{label}</span>)}</div>
+            {normalized.map((item) => <div className="mda-analysis-multi-row" key={item.label}>
+                <span>{item.label}</span>
+                <div>{item.series.map((series, index) => {
+                    const point = { label: `${item.label} · ${series.label}`, categoryLabel: item.label, seriesLabel: series.label, value: series.value, rowIndices: series.rowIndices };
+                    const interaction = createChartInteraction(chart, point, dataset);
+                    return <button type="button" key={series.label} aria-label={`${point.label}: ${formatCompactNumber(series.value)}`} style={{ width: `${Math.max(4, Math.abs(series.value) / maximum * 100)}%`, background: colors[index % colors.length] }} {...interactiveMark(onSelect, interaction)} {...tooltipEvents(interaction)} />;
+                })}</div>
+            </div>)}
+        </div>
+    );
+}
+
+function ExecutiveBriefCard({ bullets }) {
+    return (
+        <article className="mda-analysis-chart-card mda-analysis-executive-brief-card">
+            <div className="mda-analysis-chart-heading"><span><small>Management briefing</small><strong>What deserves attention?</strong></span><span className="mda-analysis-score">Auto-generated</span></div>
+            <div className="mda-analysis-chart-title"><h3>Executive Summary</h3><p>Concise conclusions supported by the selected analysis</p></div>
+            <ul>{bullets.map((item) => <li key={item.id}><span aria-hidden="true">{item.icon}</span><p>{item.text}</p></li>)}</ul>
+        </article>
     );
 }
 
@@ -184,10 +227,11 @@ function Chart({ chart, dataset, onDrillDown }) {
             </div>
             <div className="mda-analysis-chart-title"><h3>{chart.title}</h3><p>{chart.subtitle}</p></div>
             <div className="mda-analysis-chart-visual">
-                {chart.type === "bar" && <BarChart chart={chart} dataset={dataset} onSelect={selectPoint} tooltipEvents={tooltipEvents} />}
-                {chart.type === "line" && <LineChart chart={chart} dataset={dataset} onSelect={selectPoint} tooltipEvents={tooltipEvents} />}
+                {["bar", "horizontalBar", "histogram"].includes(chart.type) && <BarChart chart={chart} dataset={dataset} onSelect={selectPoint} tooltipEvents={tooltipEvents} />}
+                {["line", "area"].includes(chart.type) && <LineChart chart={chart} dataset={dataset} onSelect={selectPoint} tooltipEvents={tooltipEvents} />}
                 {chart.type === "scatter" && <ScatterChart chart={chart} dataset={dataset} onSelect={selectPoint} tooltipEvents={tooltipEvents} />}
-                {chart.type === "pie" && <PieChart chart={chart} dataset={dataset} onSelect={selectPoint} tooltipEvents={tooltipEvents} />}
+                {["pie", "donut"].includes(chart.type) && <PieChart chart={chart} dataset={dataset} onSelect={selectPoint} tooltipEvents={tooltipEvents} />}
+                {["groupedBar", "stackedBar"].includes(chart.type) && <MultiSeriesChart chart={chart} dataset={dataset} onSelect={selectPoint} tooltipEvents={tooltipEvents} />}
                 <ChartTooltip tooltip={tooltip} />
             </div>
             <button type="button" className="mda-analysis-drill-link" onClick={() => onDrillDown(rowIndices, chart.title)}>
@@ -366,10 +410,10 @@ function Analytics() {
             <section className="mda-analysis-level-card" aria-labelledby="visual-evidence-heading">
                 <div className="mda-analysis-section-heading">
                     <div><p>03 · Show me the evidence.</p><h2 id="visual-evidence-heading">Visual Evidence</h2></div>
-                    <span>Only charts selected by the existing ranking engine</span>
+                    <span>Only the highest-value evidence selected by MDA</span>
                 </div>
                 {viewModel.charts.length > 0
-                    ? <div className="mda-analysis-chart-grid">{viewModel.charts.map((chart) => <Chart key={chart.id} chart={chart} dataset={viewModel.dataset} onDrillDown={openRows} />)}</div>
+                    ? <div className="mda-analysis-chart-grid"><ExecutiveBriefCard bullets={viewModel.executiveBrief} />{viewModel.charts.map((chart) => <Chart key={chart.id} chart={chart} dataset={viewModel.dataset} onDrillDown={openRows} />)}</div>
                     : <div className="mda-analysis-no-charts"><strong>No decision-useful chart was found.</strong><p>MDA intentionally skipped generic visualizations that would not help explain this dataset.</p></div>}
             </section>
             </div>

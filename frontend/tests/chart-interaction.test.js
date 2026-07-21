@@ -55,3 +55,18 @@ test("scatter interactions identify both values and remain traceable to one sour
     assert.equal(interaction.selectionLabel, "Weight: 1,250 · Quantity: 8");
     assert.equal(interaction.fields.at(-1).value, "1");
 });
+
+test("performance comparisons expose category and series context", () => {
+    const interaction = createChartInteraction({
+        type: "groupedBar",
+        title: "Planned vs. Actual",
+        meta: { categoryColumn: "Line", seriesColumn: "Measure", valueColumn: "Output" }
+    }, { label: "Line A · Actual", categoryLabel: "Line A", seriesLabel: "Actual", value: 1180, rowIndices: [2] }, dataset);
+
+    assert.equal(interaction.selectionLabel, "Line A · Actual");
+    assert.deepEqual(interaction.fields.slice(0, 3), [
+        { label: "Line", value: "Line A" },
+        { label: "Measure", value: "Actual" },
+        { label: "Output", value: "1,180" }
+    ]);
+});

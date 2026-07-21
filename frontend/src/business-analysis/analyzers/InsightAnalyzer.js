@@ -18,7 +18,7 @@ export class InsightAnalyzer {
     }
 
     fromChart(chart) {
-        if (chart.type === "bar" && chart.data.length) {
+        if (["bar", "horizontalBar", "pie", "donut", "histogram"].includes(chart.type) && chart.data.length) {
             const first = chart.data[0];
             const share = chart.meta.total ? Math.abs(first.value) / chart.meta.total : 0;
             return createInsight({
@@ -30,7 +30,7 @@ export class InsightAnalyzer {
             });
         }
 
-        if (chart.type === "line" && chart.data.length >= 2) {
+        if (["line", "area"].includes(chart.type) && chart.data.length >= 2) {
             const first = chart.data[0];
             const last = chart.data[chart.data.length - 1];
             const difference = last.value - first.value;
@@ -51,6 +51,23 @@ export class InsightAnalyzer {
                 title: `${chart.meta.xColumn} and ${chart.meta.yColumn} move ${chart.meta.correlation >= 0 ? "together" : "in opposite directions"}`,
                 text: `The observed correlation is ${chart.meta.correlation.toFixed(2)}. This relationship is worth investigating, but it does not establish cause and effect.`,
                 rowIndices: chart.data.flatMap((item) => item.rowIndices),
+                chartId: chart.id
+            });
+        }
+
+        if (["groupedBar", "stackedBar"].includes(chart.type) && chart.data.length) {
+            const labels = chart.meta.seriesColumns || [...new Set(chart.data.flatMap((item) => (item.series || []).map((series) => series.label)))];
+            if (labels.length < 2) return null;
+            const totals = labels.map((label, index) => chart.data.reduce((sum, item) => {
+                if (item.values) return sum + (item.values[index] || 0);
+                return sum + (item.series?.find((series) => series.label === label)?.value || 0);
+            }, 0));
+            const leaderIndex = totals[0] >= totals[1] ? 0 : 1;
+            return createInsight({
+                id: `insight-${chart.id}`,
+                title: `${labels[leaderIndex]} leads the comparison`,
+                text: `${labels[leaderIndex]} is higher overall than ${labels[leaderIndex === 0 ? 1 : 0]} across the displayed comparison.`,
+                rowIndices: chart.data.flatMap((item) => item.rowIndices || item.series?.flatMap((series) => series.rowIndices) || []),
                 chartId: chart.id
             });
         }

@@ -65,7 +65,7 @@ test("analysis creates a generic executive summary and prioritized charts", () =
     assert.ok(analysis.charts.length <= 5);
     assert.ok(analysis.charts.every((chart) => chart.question && chart.score > 0));
     assert.ok(analysis.charts.some((chart) => chart.type === "line"));
-    assert.ok(analysis.charts.some((chart) => chart.type === "bar"));
+    assert.ok(analysis.charts.some((chart) => ["horizontalBar", "donut"].includes(chart.type)));
 });
 
 test("quality and insight findings remain traceable to source rows", () => {
@@ -158,6 +158,29 @@ test("chart generation and chart ranking have separate responsibilities", () => 
     const ranked = new ChartRanker().analyze({ ...generated, options: { maxCharts: 5 } });
     assert.ok(ranked.charts[0].score > 0);
     assert.equal(ranked.charts[0].ranking, undefined);
+});
+
+test("chart selection adapts to comparisons, category size, trends, and distributions", () => {
+    const production = analyzeDataset({
+        name: "Production performance",
+        headers: ["Date", "Line", "Shift", "Product", "Planned", "Actual", "Reject"],
+        rows: Array.from({ length: 12 }, (_, index) => [
+            `2026-07-${String(index + 1).padStart(2, "0")}`,
+            index % 2 ? "B" : "A",
+            index % 3 ? "Day" : "Night",
+            index % 2 ? "Resin B" : "Resin A",
+            1200,
+            1080 + index * 14,
+            8 + index
+        ])
+    });
+
+    assert.ok(production.charts.length <= 3);
+    assert.equal(production.charts[0].type, "groupedBar");
+    assert.match(production.charts[0].title, /Planned vs\. Actual/);
+    assert.ok(production.charts.some((chart) => ["line", "area"].includes(chart.type)));
+    assert.ok(production.charts.every((chart) => chart.score >= 0.55));
+    assert.equal(new Set(production.charts.map((chart) => chart.question)).size, production.charts.length);
 });
 
 test("insight analysis consumes structured findings without reading raw rows", () => {

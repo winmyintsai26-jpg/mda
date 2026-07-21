@@ -39,3 +39,11 @@ test("executive presentation limits initial findings without changing engine res
     assert.equal(analysis.insights.length, 3);
     assert.equal(viewModel.charts, analysis.charts);
 });
+
+test("executive brief contains only concise conclusions derived from analysis output", () => {
+    const viewModel = createExecutiveAnalysisViewModel(analysis);
+
+    assert.ok(viewModel.executiveBrief.length >= 4);
+    assert.ok(viewModel.executiveBrief.length <= 6);
+    assert.ok(viewModel.executiveBrief.every((item) => item.icon && item.text.endsWith(".")));
+});
