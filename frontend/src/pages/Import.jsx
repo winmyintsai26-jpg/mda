@@ -2,6 +2,7 @@ import { useCallback, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useUpload } from "../context/UploadContext";
 import { normalizeHeader } from "../utils/headerNormalizer";
+import { COLUMN_NAMES_MUST_MATCH_MESSAGE, simplifyImportError } from "../utils/importValidationMessage";
 import { API_BASE_URL } from "../config/api";
 import RememberLayoutDialog from "../saved-layouts/components/RememberLayoutDialog";
 import { createSavedLayout } from "../saved-layouts/models/savedLayout";
@@ -392,7 +393,7 @@ function Import() {
             setLayoutError("");
             setLayoutSaveMessage("");
         } catch (error) {
-            setConnectionError(error.message || "Import failed.");
+            setConnectionError(simplifyImportError(error.message));
         } finally {
             setIsImporting(false);
         }
@@ -577,11 +578,7 @@ function Import() {
                         <h2>Import</h2>
                         <p className="import-help-text">Only columns that exist in both the edited Preview table and the selected MySQL table will be included in INSERT statements.</p>
                         {previewHeaderCollisions.length > 0 && (
-                            <p className="import-message error">
-                                Import is blocked because some Preview headers normalize to the same value. Resolve these collisions first: {previewHeaderCollisions
-                                    .map((collision) => `${collision.normalized} (${collision.entries.map((entry) => `'${entry.header}' col ${entry.index}`).join(", ")})`)
-                                    .join(" | ")}
-                            </p>
+                            <p className="import-message error">{COLUMN_NAMES_MUST_MATCH_MESSAGE}</p>
                         )}
                         <div className="import-actions-row">
                             <button
