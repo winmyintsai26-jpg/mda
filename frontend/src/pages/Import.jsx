@@ -1,18 +1,42 @@
-import { useCallback, useMemo, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useUpload } from "../context/UploadContext";
 import { normalizeHeader } from "../utils/headerNormalizer";
-import { COLUMN_NAMES_MUST_MATCH_MESSAGE, simplifyImportError } from "../utils/importValidationMessage";
+import { COLUMN_NAMES_MUST_MATCH_MESSAGE } from "../utils/importValidationMessage";
 import { API_BASE_URL } from "../config/api";
-import RememberLayoutDialog from "../saved-layouts/components/RememberLayoutDialog";
-import { createSavedLayout } from "../saved-layouts/models/savedLayout";
-import { savedLayoutService } from "../saved-layouts/services/savedLayoutService";
-import { useWorkbooks } from "../workbooks/WorkbookContext";
+
+const STATUS_LABELS = {
+    ready: "Ready",
+    warning: "Warnings",
+    action: "Action Required"
+};
+
+function estimateImportTime(rowCount) {
+    if (rowCount < 1000) return "Less than 1 minute";
+    if (rowCount < 10000) return "About 1 minute";
+    return `About ${Math.max(2, Math.ceil(rowCount / 10000))} minutes`;
+}
+
+function PlanStatusCard({ title, tone, summary, children }) {
+    return (
+        <details className={`import-review-card is-${tone}`}>
+            <summary>
+                <span className="import-review-status" aria-hidden="true" />
+                <span className="import-review-copy">
+                    <strong>{title}</strong>
+                    <small>{summary}</small>
+                </span>
+                <span className="import-review-label">{STATUS_LABELS[tone]}</span>
+                <span className="import-review-chevron" aria-hidden="true">⌄</span>
+            </summary>
+            <div className="import-review-details">{children}</div>
+        </details>
+    );
+}
 
 function Import() {
     const navigate = useNavigate();
-    const { workbooks, saveWorkbook } = useWorkbooks();
-    const { table, fileName, selectedWorksheet, analysisTables, selectedTableIndex, analysisResult, worksheetTables, activeWorkbookId, setActiveWorkbookId, setImportedDataset } = useUpload();
+    const { table, fileName, selectedWorksheet, analysisTables, selectedTableIndex, setImportPlan, setImportCompletion } = useUpload();
 
     const [connection, setConnection] = useState({
         host: "localhost",
@@ -21,7 +45,6 @@ function Import() {
         password: ""
     });
     const [isConnecting, setIsConnecting] = useState(false);
-    const [isImporting, setIsImporting] = useState(false);
     const [connectionMessage, setConnectionMessage] = useState("");
     const [connectionError, setConnectionError] = useState("");
     const [databases, setDatabases] = useState([]);
@@ -29,30 +52,6 @@ function Import() {
     const [schema, setSchema] = useState([]);
     const [selectedDatabase, setSelectedDatabase] = useState("");
     const [selectedTable, setSelectedTable] = useState("");
-    const [importResult, setImportResult] = useState(null);
-    const [importError, setImportError] = useState("");
-    const [layoutDialogStep, setLayoutDialogStep] = useState(null);
-    const [layoutName, setLayoutName] = useState("");
-    const [layoutError, setLayoutError] = useState("");
-    const [layoutSaveMessage, setLayoutSaveMessage] = useState("");
-
-    const importSuccessMessage = useMemo(() => {
-        if (!importResult) {
-            return "";
-        }
-
-        const parts = ["Import Successful!"];
-
-        if (typeof importResult.insertedRowCount === "number") {
-            parts.push(`${importResult.insertedRowCount} row${importResult.insertedRowCount === 1 ? "" : "s"} imported.`);
-        }
-
-        if (importResult.message) {
-            parts.push(importResult.message);
-        }
-
-        return `✅ ${parts.join(" ")}`;
-    }, [importResult]);
 
     const selectedAnalysisTable = useMemo(() => {
         if (!selectedWorksheet || analysisTables.length === 0) {
@@ -72,6 +71,7 @@ function Import() {
     }, [analysisTables, selectedTableIndex, selectedWorksheet]);
 
     const previewHeaders = useMemo(() => table?.headers?.map((header) => header.name?.trim() || "") || [], [table]);
+    const previewRowCount = Array.isArray(table?.rows) ? table.rows.length : 0;
 
     const previewHeaderCollisions = useMemo(() => {
         const groups = new Map();
@@ -155,51 +155,26 @@ function Import() {
         };
     }, [previewHeaders, schema]);
 
-    const handleCloseLayoutDialog = useCallback(() => {
-        setLayoutDialogStep(null);
-        setLayoutError("");
-    }, []);
+    const reviewState = useMemo(() => {
+        const destinationReady = Boolean(selectedDatabase && selectedTable && schema.length > 0);
+        const hasHeaderConflicts = previewHeaderCollisions.length > 0;
+        const hasMappedColumns = comparison.matchedColumns.length > 0;
+        const hasBlockingIssue = destinationReady && (hasHeaderConflicts || !hasMappedColumns);
+        const hasWarning = destinationReady && (
+            selectedAnalysisTable?.validation?.isValid === false
+            || comparison.missing.length > 0
+            || comparison.extra.length > 0
+        );
+        const tone = !destinationReady || hasBlockingIssue ? "action" : hasWarning ? "warning" : "ready";
 
-    const handleRememberLayout = () => {
-        const suggestedName = table?.title || selectedAnalysisTable?.title || fileName.replace(/\.[^.]+$/, "");
-        setLayoutName(suggestedName || "");
-        setLayoutError("");
-        setLayoutDialogStep("name");
-    };
-
-    const handleSaveLayout = (event) => {
-        event.preventDefault();
-        const trimmedName = layoutName.trim();
-
-        if (!trimmedName) {
-            setLayoutError("Layout name is required.");
-            return;
-        }
-
-        try {
-            const savedLayout = createSavedLayout({
-                name: trimmedName,
-                fileName,
-                analysisTables,
-                table,
-                selectedAnalysisTable,
-                selectedWorksheet,
-                columnMappings: comparison.ready,
-                destination: {
-                    provider: "mysql",
-                    database: selectedDatabase,
-                    table: selectedTable
-                }
-            });
-
-            savedLayoutService.save(savedLayout);
-            setLayoutSaveMessage(`Layout “${savedLayout.name}” was saved.`);
-            setLayoutDialogStep(null);
-            setLayoutError("");
-        } catch (error) {
-            setLayoutError(error.message || "Unable to save this layout.");
-        }
-    };
+        return {
+            destinationReady,
+            hasBlockingIssue,
+            tone,
+            rowsReady: destinationReady ? (hasBlockingIssue ? 0 : previewRowCount) : null,
+            rowsRequiringAttention: destinationReady ? (hasBlockingIssue ? previewRowCount : 0) : null
+        };
+    }, [comparison, previewHeaderCollisions.length, previewRowCount, schema.length, selectedAnalysisTable?.validation?.isValid, selectedDatabase, selectedTable]);
 
     const handleConnectionFieldChange = (field) => (event) => {
         setConnection((current) => ({
@@ -222,7 +197,6 @@ function Import() {
 
         setIsConnecting(true);
         setConnectionError("");
-        setImportError("");
         setConnectionMessage("");
         setSelectedDatabase("");
         setSelectedTable("");
@@ -267,7 +241,6 @@ function Import() {
         setTables([]);
         setSchema([]);
         setConnectionError("");
-        setImportError("");
 
         if (!database) {
             return;
@@ -298,7 +271,6 @@ function Import() {
         setSelectedTable(nextTable);
         setSchema([]);
         setConnectionError("");
-        setImportError("");
 
         if (!nextTable || !selectedDatabase) {
             return;
@@ -325,82 +297,28 @@ function Import() {
         }
     };
 
-    const handleImport = async () => {
-        if (isImporting || !table || !selectedDatabase || !selectedTable) {
+    const handleImport = () => {
+        if (!table || !selectedDatabase || !selectedTable) {
             return;
         }
 
-        setIsImporting(true);
-        setImportError("");
-        setImportResult(null);
-
-        try {
-            const response = await fetch(`${API_BASE_URL}/database/mysql/import`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    ...requestBody,
-                    database: selectedDatabase,
-                    table: selectedTable,
-                    headers: table.headers.map((header) => header.name ?? ""),
-                    rows: table.rows.map((row) => row.map((value) => String(value ?? "")))
-                })
-            });
-            const payload = await response.json();
-            if (!response.ok) {
-                throw new Error(payload.message || "Import failed.");
-            }
-
-            setImportResult(payload);
-            const importedDataset = {
+        setImportCompletion(null);
+        setImportPlan({
+            id: globalThis.crypto?.randomUUID?.() || `${Date.now()}`,
+            connection: requestBody,
+            database: selectedDatabase,
+            table: selectedTable,
+            schema,
+            comparison,
+            source: {
                 name: table?.title || selectedAnalysisTable?.title || selectedTable || "Imported dataset",
                 fileName,
                 worksheet: selectedWorksheet || "",
-                destination: { provider: "mysql", database: selectedDatabase, table: selectedTable },
-                headers: table.headers.map((header, index) => ({
-                    id: header.id ?? `column-${index}`,
-                    name: header.name ?? `Column ${index + 1}`,
-                    dataType: header.dataType ?? ""
-                })),
-                rows: table.rows.map((row) => row.map((value) => String(value ?? ""))),
-                importedAt: new Date().toISOString(),
-                insertedRowCount: payload.insertedRowCount
-            };
-            setImportedDataset(importedDataset);
-            if (activeWorkbookId) {
-                const current = workbooks.find((item) => item.id === activeWorkbookId);
-                if (current) {
-                    const saved = saveWorkbook({
-                        ...current,
-                        status: "Imported",
-                        workflowStep: 5,
-                        analysisStatus: "Ready",
-                        destination: { provider: "mysql", database: selectedDatabase, table: selectedTable },
-                        lastActivity: `Import completed with ${payload.insertedRowCount?.toLocaleString("en-US") || table.rows.length} rows`,
-                        snapshot: {
-                            ...current.snapshot,
-                            fileName,
-                            analysisResult,
-                            analysisTables,
-                            selectedTableIndex,
-                            selectedWorksheet,
-                            worksheetTables,
-                            table,
-                            importedDataset
-                        }
-                    });
-                    setActiveWorkbookId(saved.id);
-                }
+                headers: table.headers.map((header) => header.name ?? ""),
+                rows: table.rows.map((row) => row.map((value) => String(value ?? "")))
             }
-            setLayoutDialogStep("success");
-            setLayoutName("");
-            setLayoutError("");
-            setLayoutSaveMessage("");
-        } catch (error) {
-            setImportError(simplifyImportError(error.message));
-        } finally {
-            setIsImporting(false);
-        }
+        });
+        navigate("/import");
     };
 
     if (!table || !Array.isArray(table.headers) || table.headers.length === 0) {
@@ -424,209 +342,176 @@ function Import() {
             <div className="import-shell">
                 <div className="import-header">
                     <div>
-                        <h1>Import to MySQL</h1>
-                        <p>Connect to MySQL, inspect the destination schema, and import the edited Preview data.</p>
-                    </div>
-                    <div className="import-actions-row">
-                        <Link to="/preview" className="import-link-button secondary">Back to Preview</Link>
+                        <p className="dashboard-eyebrow">Smart Import Plan</p>
+                        <h1>Review what MDA will do.</h1>
+                        <p>Confirm the source structure, destination, mappings, and validation status before any data is imported.</p>
                     </div>
                 </div>
 
-                <div className="import-summary-card">
-                    <h2>Preview Source</h2>
-                    <div className="import-summary-grid">
-                        <div><span>Workbook</span><strong>{fileName || "Current workbook"}</strong></div>
-                        <div><span>Worksheet</span><strong>{selectedWorksheet || "Current worksheet"}</strong></div>
-                        <div><span>Table</span><strong>{table?.title || selectedAnalysisTable?.title || "Edited preview table"}</strong></div>
-                        <div><span>Rows</span><strong>{table.rows.length}</strong></div>
-                        <div><span>Columns</span><strong>{table.headers.length}</strong></div>
-                        {table.savedLayout?.name && (
-                            <div><span>Applied Layout</span><strong>{table.savedLayout.name}</strong></div>
-                        )}
-                        {table.savedLayout?.importDestination && (
-                            <div>
-                                <span>Saved Destination</span>
-                                <strong>{table.savedLayout.importDestination.database}.{table.savedLayout.importDestination.table}</strong>
-                            </div>
-                        )}
-                    </div>
-                </div>
-
-                <div className="import-card">
-                    <h2>Connect to MySQL</h2>
-                    <div className="import-form-grid">
-                        <label>
-                            <span>Host</span>
-                            <input value={connection.host} onChange={handleConnectionFieldChange("host")} />
-                        </label>
-                        <label>
-                            <span>Username</span>
-                            <input value={connection.username} onChange={handleConnectionFieldChange("username")} />
-                        </label>
-                        <label>
-                            <span>Password</span>
-                            <input type="password" value={connection.password} onChange={handleConnectionFieldChange("password")} />
-                        </label>
-                    </div>
-                    <details className="import-advanced-options">
-                        <summary>Advanced connection options</summary>
-                        <div className="import-form-grid single-row">
-                            <label><span>Port</span><input value={connection.port} onChange={handleConnectionFieldChange("port")} /></label>
+                <section className={`import-executive-summary is-${reviewState.tone}`} aria-labelledby="import-review-heading">
+                    <div className="import-executive-heading">
+                        <div>
+                            <span>Import review</span>
+                            <h2 id="import-review-heading">Is this import ready?</h2>
                         </div>
-                    </details>
-                    <div className="import-actions-row import-connect-actions-row">
-                        <button type="button" className="primary" onClick={handleConnect} disabled={isConnecting}>
-                            <span className="button-content">
-                                {isConnecting && <span className="button-spinner" aria-hidden="true" />}
-                                <span>{isConnecting ? "Connecting..." : "Connect"}</span>
-                            </span>
-                        </button>
-                        {connectionMessage && <p className="import-message success">{connectionMessage}</p>}
-                        {connectionError && <p className="import-message error">{connectionError}</p>}
+                        <span className={`import-overall-status is-${reviewState.tone}`}>
+                            <i aria-hidden="true" /> {STATUS_LABELS[reviewState.tone]}
+                        </span>
                     </div>
-                </div>
-
-                {databases.length > 0 && (
-                    <div className="import-card">
-                        <h2>Select Destination</h2>
-                        <div className="import-form-grid single-row">
-                            <label>
-                                <span>Database</span>
-                                <select value={selectedDatabase} onChange={handleDatabaseChange}>
-                                    <option value="">Select database</option>
-                                    {databases.map((database) => (
-                                        <option key={database} value={database}>{database}</option>
-                                    ))}
-                                </select>
-                            </label>
-                            <label>
-                                <span>Table</span>
-                                <select value={selectedTable} onChange={handleTableChange} disabled={!selectedDatabase}>
-                                    <option value="">Select table</option>
-                                    {tables.map((tableName) => (
-                                        <option key={tableName} value={tableName}>{tableName}</option>
-                                    ))}
-                                </select>
-                            </label>
-                        </div>
+                    <div className="import-executive-grid">
+                        <div className="is-wide"><span>Workbook</span><strong>{fileName || "Current workbook"}</strong></div>
+                        <div className="is-wide"><span>Destination table</span><strong>{reviewState.destinationReady ? `${selectedDatabase}.${selectedTable}` : "Not selected"}</strong></div>
+                        <div><span>Rows ready to import</span><strong>{reviewState.rowsReady == null ? "Pending" : reviewState.rowsReady.toLocaleString("en-US")}</strong></div>
+                        <div><span>Rows requiring attention</span><strong>{reviewState.rowsRequiringAttention == null ? "Pending" : reviewState.rowsRequiringAttention.toLocaleString("en-US")}</strong></div>
+                        <div><span>Estimated import time</span><strong>{reviewState.destinationReady ? estimateImportTime(table.rows.length) : "Pending"}</strong></div>
+                        <div><span>Overall status</span><strong>{STATUS_LABELS[reviewState.tone]}</strong></div>
                     </div>
-                )}
+                </section>
 
-                {schema.length > 0 && (
-                    <div className="import-card">
-                        <h2>Destination Schema</h2>
-                        <div className="schema-table-wrap">
-                            <table className="schema-table">
-                                <thead>
-                                    <tr>
-                                        <th>Column</th>
-                                        <th>Type</th>
-                                        <th>Nullable</th>
-                                        <th>Default</th>
-                                        <th>Auto Increment</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {schema.map((column) => (
-                                        <tr key={column.columnName}>
-                                            <td>{column.columnName}</td>
-                                            <td>{column.dataType}</td>
-                                            <td>{column.nullable ? "Yes" : "No"}</td>
-                                            <td>{column.defaultValue ?? "-"}</td>
-                                            <td>{column.autoIncrement ? "Yes" : "No"}</td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                )}
+                <div className="import-review-grid" aria-label="Import plan review">
+                    <PlanStatusCard
+                        title="Structure"
+                        tone="ready"
+                        summary={`${selectedWorksheet || "Current worksheet"} · ${table.rows.length.toLocaleString("en-US")} rows · ${table.headers.length} columns`}
+                    >
+                        <dl className="import-review-data-list">
+                            <div><dt>Workbook</dt><dd>{fileName || "Current workbook"}</dd></div>
+                            <div><dt>Worksheet</dt><dd>{selectedWorksheet || "Current worksheet"}</dd></div>
+                            <div><dt>Table</dt><dd>{table?.title || selectedAnalysisTable?.title || "Edited preview table"}</dd></div>
+                            {table.savedLayout?.name && <div><dt>Applied layout</dt><dd>{table.savedLayout.name}</dd></div>}
+                        </dl>
+                    </PlanStatusCard>
 
-                {schema.length > 0 && (
-                    <div className="import-card">
-                        <h2>Column Comparison</h2>
+                    <PlanStatusCard
+                        title="Column Mapping"
+                        tone={!reviewState.destinationReady || comparison.ready.length === 0 ? "action" : comparison.missing.length > 0 || comparison.extra.length > 0 ? "warning" : "ready"}
+                        summary={!reviewState.destinationReady
+                            ? "Choose a destination to review column matches."
+                            : `${comparison.ready.length} matched · ${comparison.missing.length} missing · ${comparison.extra.length} not imported`}
+                    >
                         <div className="comparison-grid">
                             <div className="comparison-block ready">
-                                <h3>Ready</h3>
+                                <h3>Matched</h3>
                                 {comparison.ready.length > 0 ? comparison.ready.map((item) => (
-                                    <div key={`ready-${item.databaseColumn}`} className="comparison-row">
-                                        <strong>{item.previewColumn}</strong>
-                                        <span>{item.databaseColumn} • {item.dataType}</span>
-                                    </div>
-                                )) : <p>No matching columns.</p>}
+                                    <div key={`ready-${item.databaseColumn}`} className="comparison-row"><strong>{item.previewColumn}</strong><span>{item.databaseColumn} · {item.dataType}</span></div>
+                                )) : <p>No matching columns yet.</p>}
                             </div>
                             <div className="comparison-block missing">
                                 <h3>Missing</h3>
                                 {comparison.missing.length > 0 ? comparison.missing.map((item) => (
-                                    <div key={`missing-${item.databaseColumn}`} className="comparison-row">
-                                        <strong>{item.databaseColumn}</strong>
-                                        <span>Database column not present in Preview</span>
-                                    </div>
-                                )) : <p>No missing database columns.</p>}
+                                    <div key={`missing-${item.databaseColumn}`} className="comparison-row"><strong>{item.databaseColumn}</strong><span>Not found in the reviewed workbook</span></div>
+                                )) : <p>No missing destination columns.</p>}
                             </div>
                             <div className="comparison-block extra">
-                                <h3>Extra</h3>
+                                <h3>Not imported</h3>
                                 {comparison.extra.length > 0 ? comparison.extra.map((item) => (
-                                    <div key={`extra-${item.previewColumn}`} className="comparison-row">
-                                        <strong>{item.previewColumn}</strong>
-                                        <span>Ignored during import</span>
-                                    </div>
-                                )) : <p>No extra Preview columns.</p>}
+                                    <div key={`extra-${item.previewColumn}`} className="comparison-row"><strong>{item.previewColumn}</strong><span>Not present in the destination</span></div>
+                                )) : <p>Every source column has a destination.</p>}
                             </div>
                         </div>
-                    </div>
-                )}
+                    </PlanStatusCard>
 
-                {schema.length > 0 && (
-                    <div className="import-card">
-                        <h2>Import</h2>
-                        <p className="import-help-text">Only columns that exist in both the edited Preview table and the selected MySQL table will be included in INSERT statements.</p>
-                        {previewHeaderCollisions.length > 0 && (
-                            <p className="import-message error">{COLUMN_NAMES_MUST_MATCH_MESSAGE}</p>
-                        )}
-                        <div className="import-actions-row">
-                            <button
-                                type="button"
-                                className="primary"
-                                onClick={handleImport}
-                                disabled={isImporting || comparison.matchedColumns.length === 0 || previewHeaderCollisions.length > 0}
-                            >
-                                <span className="button-content">
-                                    {isImporting && <span className="button-spinner" aria-hidden="true" />}
-                                    <span>{isImporting ? "Importing..." : "Import"}</span>
-                                </span>
-                            </button>
-                            {importError && <p className="import-message error">{importError}</p>}
-                            {importResult && (
-                                <p className="import-message success">
-                                    {importSuccessMessage}
-                                    {selectedTable ? ` Destination table: ${selectedTable}.` : ""}
-                                </p>
-                            )}
-                            {layoutSaveMessage && <p className="import-message success">{layoutSaveMessage}</p>}
+                    <PlanStatusCard
+                        title="Transformations"
+                        tone={!reviewState.destinationReady ? "action" : comparison.extra.length > 0 ? "warning" : "ready"}
+                        summary={!reviewState.destinationReady
+                            ? "Transformation review is available after destination selection."
+                            : comparison.extra.length > 0
+                                ? `Values will be standardized; ${comparison.extra.length} source column${comparison.extra.length === 1 ? "" : "s"} will not be imported.`
+                                : "Values will be standardized for the destination."}
+                    >
+                        <div className="import-plan-list">
+                            <p><strong>Value formatting</strong><span>Numbers, dates, true/false values, and empty cells will use the existing import rules.</span></p>
+                            <p><strong>Column handling</strong><span>{comparison.extra.length} source column{comparison.extra.length === 1 ? "" : "s"} without a destination match will not be imported.</span></p>
                         </div>
-                    </div>
-                )}
-            </div>
+                    </PlanStatusCard>
 
-            {layoutDialogStep && (
-                <RememberLayoutDialog
-                    step={layoutDialogStep}
-                    insertedRowCount={importResult?.insertedRowCount}
-                    database={selectedDatabase}
-                    table={selectedTable}
-                    layoutName={layoutName}
-                    error={layoutError}
-                    onLayoutNameChange={(event) => {
-                        setLayoutName(event.target.value);
-                        setLayoutError("");
-                    }}
-                    onRemember={handleRememberLayout}
-                    onAnalyze={() => navigate("/analytics")}
-                    onNotNow={handleCloseLayoutDialog}
-                    onSave={handleSaveLayout}
-                />
-            )}
+                    <PlanStatusCard
+                        title="Validation"
+                        tone={!reviewState.destinationReady || previewHeaderCollisions.length > 0 ? "action" : selectedAnalysisTable?.validation?.isValid === false || comparison.missing.length > 0 ? "warning" : "ready"}
+                        summary={!reviewState.destinationReady
+                            ? "Choose a destination to complete validation."
+                            : previewHeaderCollisions.length > 0
+                                ? "Column names need attention before import."
+                                : selectedAnalysisTable?.validation?.isValid === false || comparison.missing.length > 0
+                                    ? "Review the warnings before importing."
+                                    : "The reviewed data is ready for destination checks."}
+                    >
+                        <div className="import-plan-status-grid">
+                            <div><span>Table review</span><strong>{selectedAnalysisTable?.validation?.isValid ? "Ready" : "Review"}</strong></div>
+                            <div><span>Mapped columns</span><strong>{comparison.ready.length}</strong></div>
+                            <div><span>Missing columns</span><strong>{comparison.missing.length}</strong></div>
+                            <div><span>Column conflicts</span><strong>{previewHeaderCollisions.length}</strong></div>
+                        </div>
+                        {previewHeaderCollisions.length > 0 && <p className="import-message error">{COLUMN_NAMES_MUST_MATCH_MESSAGE}</p>}
+                        <p className="import-help-text">Destination requirements and value checks will run when the import begins.</p>
+                    </PlanStatusCard>
+
+                    <PlanStatusCard
+                        title="Duplicate Detection"
+                        tone={reviewState.destinationReady ? "ready" : "action"}
+                        summary={reviewState.destinationReady
+                            ? "The destination table’s existing duplicate rules will be used."
+                            : "Choose a destination to confirm duplicate handling."}
+                    >
+                        <p className="import-help-text">MDA will follow the duplicate rules already defined for the selected destination table.</p>
+                    </PlanStatusCard>
+
+                    <PlanStatusCard
+                        title="Destination"
+                        tone={reviewState.destinationReady ? "ready" : "action"}
+                        summary={reviewState.destinationReady
+                            ? `${selectedDatabase}.${selectedTable} is selected for this import.`
+                            : "Connect to MySQL and choose the destination table."}
+                    >
+                        <div className="import-form-grid">
+                            <label><span>Host</span><input value={connection.host} onChange={handleConnectionFieldChange("host")} /></label>
+                            <label><span>Username</span><input value={connection.username} onChange={handleConnectionFieldChange("username")} /></label>
+                            <label><span>Password</span><input type="password" value={connection.password} onChange={handleConnectionFieldChange("password")} /></label>
+                            <label><span>Port</span><input value={connection.port} onChange={handleConnectionFieldChange("port")} /></label>
+                        </div>
+                        <div className="import-actions-row import-connect-actions-row">
+                            <button type="button" className="secondary" onClick={handleConnect} disabled={isConnecting}>
+                                <span className="button-content">{isConnecting && <span className="button-spinner" aria-hidden="true" />}<span>{isConnecting ? "Connecting..." : "Connect to MySQL"}</span></span>
+                            </button>
+                            {connectionMessage && <p className="import-message success">{connectionMessage}</p>}
+                            {connectionError && <p className="import-message error">{connectionError}</p>}
+                        </div>
+
+                        {databases.length > 0 && (
+                            <div className="import-form-grid single-row import-destination-selection">
+                                <label><span>Database</span><select value={selectedDatabase} onChange={handleDatabaseChange}><option value="">Select database</option>{databases.map((database) => <option key={database} value={database}>{database}</option>)}</select></label>
+                                <label><span>Table</span><select value={selectedTable} onChange={handleTableChange} disabled={!selectedDatabase}><option value="">Select table</option>{tables.map((tableName) => <option key={tableName} value={tableName}>{tableName}</option>)}</select></label>
+                            </div>
+                        )}
+                        {schema.length > 0 && (
+                            <div className="schema-table-wrap import-destination-schema">
+                                <table className="schema-table"><thead><tr><th>Column</th><th>Type</th><th>Nullable</th><th>Default</th><th>Auto Increment</th></tr></thead><tbody>{schema.map((column) => <tr key={column.columnName}><td>{column.columnName}</td><td>{column.dataType}</td><td>{column.nullable ? "Yes" : "No"}</td><td>{column.defaultValue ?? "-"}</td><td>{column.autoIncrement ? "Yes" : "No"}</td></tr>)}</tbody></table>
+                            </div>
+                        )}
+                    </PlanStatusCard>
+                </div>
+
+                <div className={`import-plan-action-card is-${reviewState.tone}`}>
+                    <div>
+                        <span>Final decision</span>
+                        <h2>{reviewState.tone === "action" ? "Complete the required items." : reviewState.tone === "warning" ? "Review warnings, then import." : "Ready to import."}</h2>
+                        <p>{reviewState.destinationReady
+                            ? `${table.rows.length.toLocaleString("en-US")} reviewed rows will be sent to ${selectedDatabase}.${selectedTable}.`
+                            : "Choose a destination table to complete this review."}</p>
+                    </div>
+                    <div className="import-actions-row">
+                        <button
+                            type="button"
+                            className="primary import-execute-button"
+                            onClick={handleImport}
+                            disabled={!reviewState.destinationReady || comparison.matchedColumns.length === 0 || previewHeaderCollisions.length > 0}
+                        >
+                            <span className="button-content"><span>Execute Import</span></span>
+                        </button>
+                    </div>
+                </div>
+            </div>
         </div>
     );
 }

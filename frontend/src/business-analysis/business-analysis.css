@@ -502,6 +502,38 @@
     cursor: default;
 }
 
+.mda-analysis-export-actions details { position: relative; }
+.mda-analysis-export-actions summary {
+    min-height: 38px;
+    padding: 0 13px;
+    display: inline-flex;
+    align-items: center;
+    border: 1px solid #d6eafb;
+    border-radius: 11px;
+    color: #52647c;
+    background: #fff;
+    cursor: pointer;
+    font-size: 9px;
+    font-weight: 700;
+    list-style: none;
+}
+.mda-analysis-export-actions summary::-webkit-details-marker { display: none; }
+.mda-analysis-export-actions details > div {
+    position: absolute;
+    z-index: 5;
+    top: calc(100% + 7px);
+    right: 0;
+    width: 150px;
+    padding: 6px;
+    display: grid;
+    gap: 4px;
+    border: 1px solid #d6eafb;
+    border-radius: 12px;
+    background: #fff;
+    box-shadow: 0 12px 28px rgba(71,118,163,.14);
+}
+.mda-analysis-export-actions details button { width: 100%; justify-content: flex-start; box-shadow: none; }
+
 .mda-analysis-accordion-list {
     display: grid;
     gap: 10px;

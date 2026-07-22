@@ -1914,10 +1914,10 @@ function Preview() {
                                         snapshot: { ...workbook.snapshot, table: savedTable, analysisTables, selectedTableIndex, selectedWorksheet, worksheetTables }
                                     });
                                 }
-                                navigate("/import");
+                                navigate("/import-plan");
                             }}
                         >
-                            Continue to Import
+                            Continue to Import Plan
                         </button>
                     </div>
                 </div>

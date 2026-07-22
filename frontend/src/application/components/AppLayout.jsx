@@ -7,8 +7,8 @@ import "../styles/application.css";
 import "../styles/workspace.css";
 
 const navigation = [
-    { label: "Dashboard", to: "/dashboard", icon: "dashboard" },
-    { label: "Workbooks", to: "/workbooks", icon: "workbook" }
+    { label: "Workbooks", to: "/workbooks", icon: "workbook" },
+    { label: "Connections", to: "/connections", icon: "connection" }
 ];
 
 const bottomNavigation = [
@@ -19,7 +19,7 @@ const bottomNavigation = [
 function AppLayout() {
     const { pathname } = useLocation();
     const { preferences } = usePreferences();
-    const isWorkbookWorkflow = ["/upload", "/preview", "/import", "/analytics"].includes(pathname);
+    const isWorkbookWorkflow = ["/upload", "/preview", "/import-plan", "/import", "/analytics"].includes(pathname);
 
     return (
         <div className="mda-app-shell">

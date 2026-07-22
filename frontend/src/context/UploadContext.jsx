@@ -13,6 +13,8 @@ export function UploadProvider({ children }) {
     const [selectedWorksheet, setSelectedWorksheet] = useState(null);
     const [worksheetTables, setWorksheetTables] = useState({});  // Store edits per worksheet
     const [importedDataset, setImportedDataset] = useState(null);
+    const [importPlan, setImportPlan] = useState(null);
+    const [importCompletion, setImportCompletion] = useState(null);
     const [activeWorkbookId, setActiveWorkbookId] = useState(null);
 
     const contextValue = useMemo(() => ({
@@ -32,6 +34,10 @@ export function UploadProvider({ children }) {
         setWorksheetTables,
         importedDataset,
         setImportedDataset,
+        importPlan,
+        setImportPlan,
+        importCompletion,
+        setImportCompletion,
         activeWorkbookId,
         setActiveWorkbookId
     }), [
@@ -43,6 +49,8 @@ export function UploadProvider({ children }) {
         selectedWorksheet,
         worksheetTables,
         importedDataset,
+        importPlan,
+        importCompletion,
         activeWorkbookId
     ]);
 

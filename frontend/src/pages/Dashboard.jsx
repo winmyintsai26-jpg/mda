@@ -24,7 +24,9 @@ function Dashboard() {
         setAnalysisResult,
         setSelectedWorksheet,
         setWorksheetTables,
-        setActiveWorkbookId
+        setActiveWorkbookId,
+        setImportPlan,
+        setImportCompletion
     } = useUpload();
 
     const [file, setFile] = useState(null);
@@ -60,6 +62,8 @@ function Dashboard() {
         setPendingPreviewTables([]);
         setPendingWorkbook(null);
         setActiveWorkbookId(null);
+        setImportPlan(null);
+        setImportCompletion(null);
     };
 
     const handleAnalyzeNormally = () => {

@@ -67,6 +67,7 @@ body,
 :root[data-theme="soft-dark"] .import-shell,
 :root[data-theme="soft-dark"] .import-card,
 :root[data-theme="soft-dark"] .import-summary-card,
+:root[data-theme="soft-dark"] .import-complete-card,
 :root[data-theme="soft-dark"] .preview-page-header,
 :root[data-theme="soft-dark"] .worksheet-tabs,
 :root[data-theme="soft-dark"] .preview-table-container,
@@ -170,6 +171,36 @@ body,
 :root[data-theme="soft-dark"] input::placeholder,
 :root[data-theme="soft-dark"] textarea::placeholder { color: #778297; }
 :root[data-theme="soft-dark"] input[readonly] { color: #a8b3c5 !important; background: #243447 !important; }
+
+:root[data-theme="soft-dark"] .import-plan-list p,
+:root[data-theme="soft-dark"] .import-plan-status-grid div,
+:root[data-theme="soft-dark"] .import-complete-grid div,
+:root[data-theme="soft-dark"] .import-executive-summary,
+:root[data-theme="soft-dark"] .import-executive-grid > div,
+:root[data-theme="soft-dark"] .import-review-card,
+:root[data-theme="soft-dark"] .import-review-details,
+:root[data-theme="soft-dark"] .import-review-data-list > div,
+:root[data-theme="soft-dark"] .import-plan-action-card,
+:root[data-theme="soft-dark"] .mda-analysis-export-actions summary,
+:root[data-theme="soft-dark"] .mda-analysis-export-actions details > div {
+    border-color: #334155 !important;
+    color: #f3f4f6;
+    background: #243447 !important;
+}
+
+:root[data-theme="soft-dark"] .import-review-card > summary:hover,
+:root[data-theme="soft-dark"] .import-review-card[open] > summary { background: #2d3b52 !important; }
+:root[data-theme="soft-dark"] .import-executive-grid strong,
+:root[data-theme="soft-dark"] .import-review-copy strong,
+:root[data-theme="soft-dark"] .import-review-data-list dd,
+:root[data-theme="soft-dark"] .import-plan-action-card h2 { color: #f3f4f6 !important; }
+:root[data-theme="soft-dark"] .import-executive-grid span,
+:root[data-theme="soft-dark"] .import-review-copy small,
+:root[data-theme="soft-dark"] .import-review-data-list dt,
+:root[data-theme="soft-dark"] .import-plan-action-card p { color: #a8b3c5 !important; }
+:root[data-theme="soft-dark"] .import-overall-status.is-ready { color: #86efac; background: #1d3b31; }
+:root[data-theme="soft-dark"] .import-overall-status.is-warning { color: #fde68a; background: #3b3421; }
+:root[data-theme="soft-dark"] .import-overall-status.is-action { color: #fda4af; background: #3b252c; }
 
 :root[data-theme="soft-dark"] table {
     color: #d1d5db;

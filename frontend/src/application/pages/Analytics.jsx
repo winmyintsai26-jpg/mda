@@ -356,8 +356,11 @@ function Analytics() {
                     </div>
                 </div>
                 <div className="mda-analysis-export-actions">
-                    <button type="button" onClick={() => window.print()}>Print report</button>
-                    <button type="button" className="primary" onClick={exportSummary}>Export summary</button>
+                    <details>
+                        <summary aria-label="More analysis actions">More actions</summary>
+                        <div><button type="button" onClick={() => window.print()}>Print report</button><button type="button" onClick={exportSummary}>Export summary</button></div>
+                    </details>
+                    <button type="button" className="primary" onClick={() => document.getElementById("visual-evidence-heading")?.scrollIntoView({ behavior: "smooth", block: "start" })}>Explore Data</button>
                 </div>
             </header>
 
