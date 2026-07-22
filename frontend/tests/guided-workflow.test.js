@@ -39,9 +39,10 @@ test("one approved plan cannot execute its import request twice", async () => {
     assert.deepEqual(second, first);
 });
 
-test("the import review uses an executive summary and six collapsed review cards", async () => {
-    const [importPlanSource, importCompleteSource] = await Promise.all([
+test("the import review separates connection configuration from the final checklist", async () => {
+    const [importPlanSource, connectionSource, importCompleteSource] = await Promise.all([
         readFile(new URL("../src/pages/Import.jsx", import.meta.url), "utf8"),
+        readFile(new URL("../src/application/pages/Connections.jsx", import.meta.url), "utf8"),
         readFile(new URL("../src/pages/ImportComplete.jsx", import.meta.url), "utf8")
     ]);
 
@@ -49,10 +50,20 @@ test("the import review uses an executive summary and six collapsed review cards
         assert.match(importPlanSource, new RegExp(`title="${label}"`));
     }
 
-    assert.match(importPlanSource, /Rows ready to import/);
-    assert.match(importPlanSource, /Rows requiring attention/);
-    assert.match(importPlanSource, /Estimated import time/);
-    assert.match(importPlanSource, /Overall status/);
+    assert.match(importPlanSource, /Import readiness/);
+    assert.match(importPlanSource, /Ready to Import/);
+    assert.match(importPlanSource, /Ready with Warnings/);
+    assert.match(importPlanSource, /No blocking issues detected/);
+    assert.match(importPlanSource, /connectionName.*selectedTable/s);
+    assert.doesNotMatch(importPlanSource, /<span>Host<\/span>/);
+    assert.doesNotMatch(importPlanSource, /<span>Port<\/span>/);
+    assert.doesNotMatch(importPlanSource, /<span>Username<\/span>/);
+    assert.doesNotMatch(importPlanSource, /type="password"/);
+
+    for (const label of ["Host", "Port", "Username", "Password", "Database name", "Connection status", "Advanced connection settings", "Test Connection"]) {
+        assert.match(connectionSource, new RegExp(label));
+    }
+
     assert.equal((importPlanSource.match(/Execute Import/g) || []).length, 1);
     assert.match(importCompleteSource, /View Business Analysis/);
     assert.match(importCompleteSource, /Return to Workbooks/);

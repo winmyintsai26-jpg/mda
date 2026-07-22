@@ -1,21 +1,21 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useUpload } from "../context/UploadContext";
+import { useDatabaseConnection } from "../context/DatabaseConnectionContext";
 import { normalizeHeader } from "../utils/headerNormalizer";
 import { COLUMN_NAMES_MUST_MATCH_MESSAGE } from "../utils/importValidationMessage";
-import { API_BASE_URL } from "../config/api";
 
 const STATUS_LABELS = {
     ready: "Ready",
-    warning: "Warnings",
+    warning: "Warning",
     action: "Action Required"
 };
 
-function estimateImportTime(rowCount) {
-    if (rowCount < 1000) return "Less than 1 minute";
-    if (rowCount < 10000) return "About 1 minute";
-    return `About ${Math.max(2, Math.ceil(rowCount / 10000))} minutes`;
-}
+const READINESS_TITLES = {
+    ready: "Ready to Import",
+    warning: "Ready with Warnings",
+    action: "Action Required"
+};
 
 function PlanStatusCard({ title, tone, summary, children }) {
     return (
@@ -37,21 +37,7 @@ function PlanStatusCard({ title, tone, summary, children }) {
 function Import() {
     const navigate = useNavigate();
     const { table, fileName, selectedWorksheet, analysisTables, selectedTableIndex, setImportPlan, setImportCompletion } = useUpload();
-
-    const [connection, setConnection] = useState({
-        host: "localhost",
-        port: "3306",
-        username: "",
-        password: ""
-    });
-    const [isConnecting, setIsConnecting] = useState(false);
-    const [connectionMessage, setConnectionMessage] = useState("");
-    const [connectionError, setConnectionError] = useState("");
-    const [databases, setDatabases] = useState([]);
-    const [tables, setTables] = useState([]);
-    const [schema, setSchema] = useState([]);
-    const [selectedDatabase, setSelectedDatabase] = useState("");
-    const [selectedTable, setSelectedTable] = useState("");
+    const { connectionName, requestBody, schema, selectedDatabase, selectedTable } = useDatabaseConnection();
 
     const selectedAnalysisTable = useMemo(() => {
         if (!selectedWorksheet || analysisTables.length === 0) {
@@ -71,7 +57,12 @@ function Import() {
     }, [analysisTables, selectedTableIndex, selectedWorksheet]);
 
     const previewHeaders = useMemo(() => table?.headers?.map((header) => header.name?.trim() || "") || [], [table]);
-    const previewRowCount = Array.isArray(table?.rows) ? table.rows.length : 0;
+    const detectedTableCount = selectedWorksheet
+        ? analysisTables.filter((candidate) => candidate.worksheetName === selectedWorksheet).length
+        : analysisTables.length;
+    const validationIssues = selectedAnalysisTable?.validation?.issues || [];
+    const validationWarnings = selectedAnalysisTable?.validation?.warnings || [];
+    const validationIssueCount = validationIssues.length + validationWarnings.length;
 
     const previewHeaderCollisions = useMemo(() => {
         const groups = new Map();
@@ -170,132 +161,25 @@ function Import() {
         return {
             destinationReady,
             hasBlockingIssue,
-            tone,
-            rowsReady: destinationReady ? (hasBlockingIssue ? 0 : previewRowCount) : null,
-            rowsRequiringAttention: destinationReady ? (hasBlockingIssue ? previewRowCount : 0) : null
+            tone
         };
-    }, [comparison, previewHeaderCollisions.length, previewRowCount, schema.length, selectedAnalysisTable?.validation?.isValid, selectedDatabase, selectedTable]);
+    }, [comparison, previewHeaderCollisions.length, schema.length, selectedAnalysisTable?.validation?.isValid, selectedDatabase, selectedTable]);
 
-    const handleConnectionFieldChange = (field) => (event) => {
-        setConnection((current) => ({
-            ...current,
-            [field]: event.target.value
-        }));
-    };
-
-    const requestBody = useMemo(() => ({
-        host: connection.host,
-        port: Number(connection.port || 3306),
-        username: connection.username,
-        password: connection.password
-    }), [connection.host, connection.password, connection.port, connection.username]);
-
-    const handleConnect = async () => {
-        if (isConnecting) {
-            return;
+    const readinessMessage = useMemo(() => {
+        if (!reviewState.destinationReady) return "Select a destination on Connections before importing.";
+        if (previewHeaderCollisions.length > 0) {
+            return `${previewHeaderCollisions.length} column name conflict${previewHeaderCollisions.length === 1 ? "" : "s"} must be resolved.`;
         }
-
-        setIsConnecting(true);
-        setConnectionError("");
-        setConnectionMessage("");
-        setSelectedDatabase("");
-        setSelectedTable("");
-        setTables([]);
-        setSchema([]);
-
-        try {
-            const connectionResponse = await fetch(`${API_BASE_URL}/database/mysql/test-connection`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(requestBody)
-            });
-
-            const connectionPayload = await connectionResponse.json();
-            if (!connectionResponse.ok) {
-                throw new Error(connectionPayload.message || connectionPayload.Message || "Unable to connect to MySQL.");
-            }
-
-            const databasesResponse = await fetch(`${API_BASE_URL}/database/mysql/databases`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(requestBody)
-            });
-            const databasesPayload = await databasesResponse.json();
-            if (!databasesResponse.ok) {
-                throw new Error(databasesPayload.message || "Unable to load databases.");
-            }
-
-            setDatabases(databasesPayload);
-            setConnectionMessage(connectionPayload.message || connectionPayload.Message || "Connection successful.");
-        } catch (error) {
-            setConnectionError(error.message || "Unable to connect to MySQL.");
-        } finally {
-            setIsConnecting(false);
+        if (comparison.matchedColumns.length === 0) return COLUMN_NAMES_MUST_MATCH_MESSAGE;
+        if (reviewState.tone === "warning") {
+            const warnings = [];
+            if (validationIssueCount > 0) warnings.push(`${validationIssueCount} validation item${validationIssueCount === 1 ? " requires" : "s require"} review`);
+            if (comparison.missing.length > 0) warnings.push(`${comparison.missing.length} destination column${comparison.missing.length === 1 ? " is" : "s are"} not mapped`);
+            if (comparison.extra.length > 0) warnings.push(`${comparison.extra.length} source column${comparison.extra.length === 1 ? " will" : "s will"} not be imported`);
+            return `${warnings.join(". ")}.`;
         }
-    };
-
-    const handleDatabaseChange = async (event) => {
-        const database = event.target.value;
-        setSelectedDatabase(database);
-        setSelectedTable("");
-        setTables([]);
-        setSchema([]);
-        setConnectionError("");
-
-        if (!database) {
-            return;
-        }
-
-        try {
-            const response = await fetch(`${API_BASE_URL}/database/mysql/tables`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    ...requestBody,
-                    database
-                })
-            });
-            const payload = await response.json();
-            if (!response.ok) {
-                throw new Error(payload.message || "Unable to load tables.");
-            }
-
-            setTables(payload);
-        } catch (error) {
-            setConnectionError(error.message || "Unable to load tables.");
-        }
-    };
-
-    const handleTableChange = async (event) => {
-        const nextTable = event.target.value;
-        setSelectedTable(nextTable);
-        setSchema([]);
-        setConnectionError("");
-
-        if (!nextTable || !selectedDatabase) {
-            return;
-        }
-
-        try {
-            const response = await fetch(`${API_BASE_URL}/database/mysql/schema`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    ...requestBody,
-                    database: selectedDatabase,
-                    table: nextTable
-                })
-            });
-            const payload = await response.json();
-            if (!response.ok) {
-                throw new Error(payload.message || "Unable to load schema.");
-            }
-
-            setSchema(payload);
-        } catch (error) {
-            setConnectionError(error.message || "Unable to load schema.");
-        }
-    };
+        return "No blocking issues detected.";
+    }, [comparison.extra.length, comparison.matchedColumns.length, comparison.missing.length, previewHeaderCollisions.length, reviewState.destinationReady, reviewState.tone, validationIssueCount]);
 
     const handleImport = () => {
         if (!table || !selectedDatabase || !selectedTable) {
@@ -343,28 +227,25 @@ function Import() {
                 <div className="import-header">
                     <div>
                         <p className="dashboard-eyebrow">Smart Import Plan</p>
-                        <h1>Review what MDA will do.</h1>
-                        <p>Confirm the source structure, destination, mappings, and validation status before any data is imported.</p>
+                        <h1>Final review before import.</h1>
+                        <p>Confirm that the workbook is safe to import and verify where the data will go.</p>
                     </div>
                 </div>
 
                 <section className={`import-executive-summary is-${reviewState.tone}`} aria-labelledby="import-review-heading">
                     <div className="import-executive-heading">
                         <div>
-                            <span>Import review</span>
-                            <h2 id="import-review-heading">Is this import ready?</h2>
+                            <span>Import readiness</span>
+                            <h2 id="import-review-heading"><i className="import-readiness-symbol" aria-hidden="true">{reviewState.tone === "ready" ? "✓" : reviewState.tone === "warning" ? "⚠" : "✕"}</i>{READINESS_TITLES[reviewState.tone]}</h2>
+                            <p>{readinessMessage}</p>
                         </div>
                         <span className={`import-overall-status is-${reviewState.tone}`}>
                             <i aria-hidden="true" /> {STATUS_LABELS[reviewState.tone]}
                         </span>
                     </div>
-                    <div className="import-executive-grid">
-                        <div className="is-wide"><span>Workbook</span><strong>{fileName || "Current workbook"}</strong></div>
-                        <div className="is-wide"><span>Destination table</span><strong>{reviewState.destinationReady ? `${selectedDatabase}.${selectedTable}` : "Not selected"}</strong></div>
-                        <div><span>Rows ready to import</span><strong>{reviewState.rowsReady == null ? "Pending" : reviewState.rowsReady.toLocaleString("en-US")}</strong></div>
-                        <div><span>Rows requiring attention</span><strong>{reviewState.rowsRequiringAttention == null ? "Pending" : reviewState.rowsRequiringAttention.toLocaleString("en-US")}</strong></div>
-                        <div><span>Estimated import time</span><strong>{reviewState.destinationReady ? estimateImportTime(table.rows.length) : "Pending"}</strong></div>
-                        <div><span>Overall status</span><strong>{STATUS_LABELS[reviewState.tone]}</strong></div>
+                    <div className={`import-destination-summary ${reviewState.destinationReady ? "is-selected" : "is-missing"}`}>
+                        <span>Destination</span>
+                        <strong>{reviewState.destinationReady ? <>{connectionName || "Database Connection"}<i aria-hidden="true">→</i>{selectedTable}</> : "No destination selected"}</strong>
                     </div>
                 </section>
 
@@ -372,7 +253,7 @@ function Import() {
                     <PlanStatusCard
                         title="Structure"
                         tone="ready"
-                        summary={`${selectedWorksheet || "Current worksheet"} · ${table.rows.length.toLocaleString("en-US")} rows · ${table.headers.length} columns`}
+                        summary={`${detectedTableCount || 1} table${detectedTableCount === 1 ? "" : "s"} detected.`}
                     >
                         <dl className="import-review-data-list">
                             <div><dt>Workbook</dt><dd>{fileName || "Current workbook"}</dd></div>
@@ -386,8 +267,14 @@ function Import() {
                         title="Column Mapping"
                         tone={!reviewState.destinationReady || comparison.ready.length === 0 ? "action" : comparison.missing.length > 0 || comparison.extra.length > 0 ? "warning" : "ready"}
                         summary={!reviewState.destinationReady
-                            ? "Choose a destination to review column matches."
-                            : `${comparison.ready.length} matched · ${comparison.missing.length} missing · ${comparison.extra.length} not imported`}
+                            ? "Destination required to review mappings."
+                            : comparison.ready.length === 0
+                                ? "Column names must be matched."
+                                : comparison.missing.length > 0
+                                    ? `${comparison.missing.length} destination column${comparison.missing.length === 1 ? " requires" : "s require"} mapping.`
+                                    : comparison.extra.length > 0
+                                        ? `${comparison.extra.length} source column${comparison.extra.length === 1 ? " will" : "s will"} not be imported.`
+                                        : `All ${comparison.ready.length} columns are mapped.`}
                     >
                         <div className="comparison-grid">
                             <div className="comparison-block ready">
@@ -415,10 +302,10 @@ function Import() {
                         title="Transformations"
                         tone={!reviewState.destinationReady ? "action" : comparison.extra.length > 0 ? "warning" : "ready"}
                         summary={!reviewState.destinationReady
-                            ? "Transformation review is available after destination selection."
+                            ? "Destination required to confirm transformations."
                             : comparison.extra.length > 0
-                                ? `Values will be standardized; ${comparison.extra.length} source column${comparison.extra.length === 1 ? "" : "s"} will not be imported.`
-                                : "Values will be standardized for the destination."}
+                                ? `Conversions will be applied; ${comparison.extra.length} column${comparison.extra.length === 1 ? " is" : "s are"} excluded.`
+                                : "Numeric and date conversions will be applied."}
                     >
                         <div className="import-plan-list">
                             <p><strong>Value formatting</strong><span>Numbers, dates, true/false values, and empty cells will use the existing import rules.</span></p>
@@ -430,12 +317,16 @@ function Import() {
                         title="Validation"
                         tone={!reviewState.destinationReady || previewHeaderCollisions.length > 0 ? "action" : selectedAnalysisTable?.validation?.isValid === false || comparison.missing.length > 0 ? "warning" : "ready"}
                         summary={!reviewState.destinationReady
-                            ? "Choose a destination to complete validation."
+                            ? "Destination required to complete validation."
                             : previewHeaderCollisions.length > 0
-                                ? "Column names need attention before import."
-                                : selectedAnalysisTable?.validation?.isValid === false || comparison.missing.length > 0
-                                    ? "Review the warnings before importing."
-                                    : "The reviewed data is ready for destination checks."}
+                                ? `${previewHeaderCollisions.length} column name conflict${previewHeaderCollisions.length === 1 ? "" : "s"} detected.`
+                                : selectedAnalysisTable?.validation?.isValid === false
+                                    ? validationIssueCount > 0
+                                        ? `${validationIssueCount} validation item${validationIssueCount === 1 ? " requires" : "s require"} review.`
+                                        : "Validation issues require review."
+                                    : comparison.missing.length > 0
+                                        ? `${comparison.missing.length} unmapped column${comparison.missing.length === 1 ? " requires" : "s require"} review.`
+                                        : "No validation issues detected."}
                     >
                         <div className="import-plan-status-grid">
                             <div><span>Table review</span><strong>{selectedAnalysisTable?.validation?.isValid ? "Ready" : "Review"}</strong></div>
@@ -444,6 +335,8 @@ function Import() {
                             <div><span>Column conflicts</span><strong>{previewHeaderCollisions.length}</strong></div>
                         </div>
                         {previewHeaderCollisions.length > 0 && <p className="import-message error">{COLUMN_NAMES_MUST_MATCH_MESSAGE}</p>}
+                        {validationIssues.map((issue) => <p className="import-help-text" key={`issue-${issue}`}>{issue}</p>)}
+                        {validationWarnings.map((warning) => <p className="import-help-text" key={`warning-${warning}`}>{warning}</p>)}
                         <p className="import-help-text">Destination requirements and value checks will run when the import begins.</p>
                     </PlanStatusCard>
 
@@ -451,8 +344,8 @@ function Import() {
                         title="Duplicate Detection"
                         tone={reviewState.destinationReady ? "ready" : "action"}
                         summary={reviewState.destinationReady
-                            ? "The destination table’s existing duplicate rules will be used."
-                            : "Choose a destination to confirm duplicate handling."}
+                            ? "No duplicate conflicts detected."
+                            : "Destination required to confirm duplicate handling."}
                     >
                         <p className="import-help-text">MDA will follow the duplicate rules already defined for the selected destination table.</p>
                     </PlanStatusCard>
@@ -461,44 +354,23 @@ function Import() {
                         title="Destination"
                         tone={reviewState.destinationReady ? "ready" : "action"}
                         summary={reviewState.destinationReady
-                            ? `${selectedDatabase}.${selectedTable} is selected for this import.`
-                            : "Connect to MySQL and choose the destination table."}
+                            ? `${connectionName || "Database Connection"} → ${selectedTable}`
+                            : "No destination selected."}
                     >
-                        <div className="import-form-grid">
-                            <label><span>Host</span><input value={connection.host} onChange={handleConnectionFieldChange("host")} /></label>
-                            <label><span>Username</span><input value={connection.username} onChange={handleConnectionFieldChange("username")} /></label>
-                            <label><span>Password</span><input type="password" value={connection.password} onChange={handleConnectionFieldChange("password")} /></label>
-                            <label><span>Port</span><input value={connection.port} onChange={handleConnectionFieldChange("port")} /></label>
+                        <div className="import-destination-detail">
+                            <p>{reviewState.destinationReady ? "This reusable destination is managed on the Connections page." : "Configure and select the reusable destination on the Connections page."}</p>
+                            <button type="button" className="secondary" onClick={() => navigate("/connections")}>Manage Connections</button>
                         </div>
-                        <div className="import-actions-row import-connect-actions-row">
-                            <button type="button" className="secondary" onClick={handleConnect} disabled={isConnecting}>
-                                <span className="button-content">{isConnecting && <span className="button-spinner" aria-hidden="true" />}<span>{isConnecting ? "Connecting..." : "Connect to MySQL"}</span></span>
-                            </button>
-                            {connectionMessage && <p className="import-message success">{connectionMessage}</p>}
-                            {connectionError && <p className="import-message error">{connectionError}</p>}
-                        </div>
-
-                        {databases.length > 0 && (
-                            <div className="import-form-grid single-row import-destination-selection">
-                                <label><span>Database</span><select value={selectedDatabase} onChange={handleDatabaseChange}><option value="">Select database</option>{databases.map((database) => <option key={database} value={database}>{database}</option>)}</select></label>
-                                <label><span>Table</span><select value={selectedTable} onChange={handleTableChange} disabled={!selectedDatabase}><option value="">Select table</option>{tables.map((tableName) => <option key={tableName} value={tableName}>{tableName}</option>)}</select></label>
-                            </div>
-                        )}
-                        {schema.length > 0 && (
-                            <div className="schema-table-wrap import-destination-schema">
-                                <table className="schema-table"><thead><tr><th>Column</th><th>Type</th><th>Nullable</th><th>Default</th><th>Auto Increment</th></tr></thead><tbody>{schema.map((column) => <tr key={column.columnName}><td>{column.columnName}</td><td>{column.dataType}</td><td>{column.nullable ? "Yes" : "No"}</td><td>{column.defaultValue ?? "-"}</td><td>{column.autoIncrement ? "Yes" : "No"}</td></tr>)}</tbody></table>
-                            </div>
-                        )}
                     </PlanStatusCard>
                 </div>
 
                 <div className={`import-plan-action-card is-${reviewState.tone}`}>
                     <div>
                         <span>Final decision</span>
-                        <h2>{reviewState.tone === "action" ? "Complete the required items." : reviewState.tone === "warning" ? "Review warnings, then import." : "Ready to import."}</h2>
+                        <h2>{READINESS_TITLES[reviewState.tone]}</h2>
                         <p>{reviewState.destinationReady
-                            ? `${table.rows.length.toLocaleString("en-US")} reviewed rows will be sent to ${selectedDatabase}.${selectedTable}.`
-                            : "Choose a destination table to complete this review."}</p>
+                            ? `${table.rows.length.toLocaleString("en-US")} reviewed rows will be sent to ${connectionName || "Database Connection"} → ${selectedTable}.`
+                            : "Select a destination on Connections to complete this review."}</p>
                     </div>
                     <div className="import-actions-row">
                         <button

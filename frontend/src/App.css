@@ -2369,6 +2369,26 @@ button.secondary:hover:not(:disabled),
     letter-spacing: -.025em;
 }
 
+.import-executive-heading h2 { display: flex; align-items: center; gap: 10px; }
+.import-executive-heading > div > p { margin: 9px 0 0; color: #64748b; font-size: 15px; line-height: 1.55; }
+.import-readiness-symbol { width: 31px; height: 31px; display: inline-grid; flex: 0 0 auto; place-items: center; border-radius: 10px; color: #a16207; background: #fef3c7; font-style: normal; font-size: 18px; }
+.import-executive-summary.is-ready .import-readiness-symbol { color: #047857; background: #d1fae5; }
+.import-executive-summary.is-action .import-readiness-symbol { color: #b42318; background: #ffe4e6; }
+
+.import-destination-summary {
+    margin-top: 24px;
+    padding: 17px 18px;
+    display: grid;
+    gap: 7px;
+    border: 1px solid #e2edf7;
+    border-radius: 14px;
+    background: #fbfdff;
+}
+.import-destination-summary > span { color: #64748b; font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+.import-destination-summary > strong { display: flex; align-items: center; gap: 12px; color: #172033; font-size: 19px; }
+.import-destination-summary > strong i { color: #60a5fa; font-style: normal; }
+.import-destination-summary.is-missing > strong { color: #b42318; }
+
 .import-overall-status,
 .import-review-label {
     display: inline-flex;
@@ -2475,6 +2495,9 @@ button.secondary:hover:not(:disabled),
 .import-review-details .import-message { margin-top: 14px; }
 .import-destination-selection,
 .import-destination-schema { margin-top: 18px; }
+.import-destination-detail { display: flex; align-items: center; justify-content: space-between; gap: 18px; }
+.import-destination-detail p { margin: 0; color: #64748b; font-size: 14px; line-height: 1.5; }
+.import-destination-detail button { flex: 0 0 auto; }
 
 .import-plan-action-card {
     padding: 23px 25px;
@@ -2513,6 +2536,7 @@ button.secondary:hover:not(:disabled),
     .import-review-card > summary { grid-template-columns: auto minmax(0, 1fr) auto; }
     .import-review-label { display: none; }
     .import-review-data-list { grid-template-columns: 1fr; }
+    .import-destination-detail { align-items: stretch; flex-direction: column; }
     .import-complete-grid > div:nth-child(3) { grid-column: auto; }
 }
 

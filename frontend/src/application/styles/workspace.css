@@ -326,6 +326,37 @@
 .mda-connection-card footer > div button { width: 35px; padding: 0; }
 .mda-connection-card footer button.is-danger { color: #b84a52; }
 
+.mda-connection-summary span.is-disconnected i { background: #94a3b8; }
+.mda-connection-editor { padding: 26px; border: 1px solid #d6eafb; border-radius: 20px; background: #fff; box-shadow: inset 0 4px 0 #bfdbfe, 0 12px 30px rgba(71,118,163,.07); }
+.mda-connection-editor > header { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 14px; }
+.mda-connection-editor > header h2 { margin: 0; color: #26364c; font-size: 18px; font-weight: 740; letter-spacing: -.025em; }
+.mda-connection-editor > header p { margin: 5px 0 0; color: #8290a3; font-size: 11px; }
+.mda-connection-status { display: grid; justify-items: end; gap: 6px; }
+.mda-connection-status > span { color: #8b98aa; font-size: 9px; font-weight: 650; }
+.mda-connection-form { margin-top: 24px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.mda-connection-form > label,
+.mda-connection-advanced label,
+.mda-connection-destination-fields label { display: grid; gap: 8px; }
+.mda-connection-form label > span,
+.mda-connection-destination-fields label > span { color: #52647a; font-size: 12px; font-weight: 700; }
+.mda-connection-form input,
+.mda-connection-destination-fields select { width: 100%; height: 46px; padding: 0 13px; border: 1px solid #d6eafb; border-radius: 12px; outline: none; color: #334155; background: #fbfdff; font: inherit; font-size: 13px; }
+.mda-connection-form input:focus,
+.mda-connection-destination-fields select:focus { border-color: #60a5fa; box-shadow: 0 0 0 3px rgba(191,219,254,.5); }
+.mda-connection-advanced { grid-column: 1 / -1; overflow: hidden; border: 1px solid #e2edf7; border-radius: 14px; background: #fbfdff; }
+.mda-connection-advanced > summary { padding: 14px 16px; color: #52647a; cursor: pointer; font-size: 12px; font-weight: 720; }
+.mda-connection-advanced > div { padding: 0 16px 16px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.mda-connection-test-row { margin-top: 20px; display: flex; align-items: center; gap: 14px; }
+.mda-connection-test-row p { margin: 0; font-size: 12px; font-weight: 650; }
+.mda-connection-test-row p.is-success { color: #047857; }
+.mda-connection-test-row p.is-error { color: #b42318; }
+.mda-connection-destination { margin-top: 26px; padding-top: 24px; border-top: 1px solid #e2edf7; }
+.mda-connection-destination > div:first-child > p { margin: 0; color: #2563eb; font-size: 10px; font-weight: 780; letter-spacing: .09em; text-transform: uppercase; }
+.mda-connection-destination h3 { margin: 6px 0 0; color: #26364c; font-size: 17px; }
+.mda-connection-destination-fields { margin-top: 17px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.mda-connection-selected-destination { margin: 18px 0 0; padding: 15px 17px; display: flex; align-items: center; gap: 12px; border: 1px solid #bbf7d0; border-radius: 13px; color: #047857; background: #f0fdf4; font-size: 14px; }
+.mda-connection-selected-destination span { color: #60a5fa; }
+
 .mda-settings-layout { margin-top: 24px; display: grid; grid-template-columns: 210px minmax(0, 1fr); align-items: start; gap: 18px; }
 .mda-settings-layout > nav { position: sticky; top: 92px; padding: 9px; display: grid; gap: 4px; border: 1px solid #d6eafb; border-radius: 16px; background: #fff; }
 .mda-settings-layout > nav a { min-height: 39px; padding: 0 10px; display: flex; align-items: center; gap: 9px; border-radius: 10px; color: #66768b !important; font-size: 9px; font-weight: 680; }
@@ -372,6 +403,10 @@
     .mda-connection-grid { grid-template-columns: 1fr; }
     .mda-settings-layout { grid-template-columns: 1fr; }
     .mda-settings-layout > nav { position: static; grid-template-columns: repeat(5, auto); overflow-x: auto; }
+    .mda-connection-form,
+    .mda-connection-advanced > div,
+    .mda-connection-destination-fields { grid-template-columns: 1fr; }
+    .mda-connection-test-row { align-items: stretch; flex-direction: column; }
 }
 
 @media (max-width: 960px) {

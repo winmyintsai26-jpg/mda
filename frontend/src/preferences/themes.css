@@ -99,6 +99,21 @@ body,
     box-shadow: 0 12px 30px rgba(6, 12, 24, .2);
 }
 
+:root[data-theme="soft-dark"] .mda-connection-editor,
+:root[data-theme="soft-dark"] .mda-connection-advanced,
+:root[data-theme="soft-dark"] .mda-connection-selected-destination {
+    border-color: #334155 !important;
+    color: #f3f4f6;
+    background: #1e293b !important;
+}
+
+:root[data-theme="soft-dark"] .mda-connection-advanced { background: #243447 !important; }
+:root[data-theme="soft-dark"] .mda-connection-editor h2,
+:root[data-theme="soft-dark"] .mda-connection-destination h3 { color: #f3f4f6 !important; }
+:root[data-theme="soft-dark"] .mda-connection-editor input,
+:root[data-theme="soft-dark"] .mda-connection-editor select { border-color: #334155; color: #f3f4f6; background: #1a2537; }
+:root[data-theme="soft-dark"] .mda-connection-selected-destination { color: #86efac; background: #1d3b31 !important; }
+
 :root[data-theme="soft-dark"] .mda-app-sidebar {
     background: #172033 !important;
 }
@@ -198,6 +213,10 @@ body,
 :root[data-theme="soft-dark"] .import-review-copy small,
 :root[data-theme="soft-dark"] .import-review-data-list dt,
 :root[data-theme="soft-dark"] .import-plan-action-card p { color: #a8b3c5 !important; }
+:root[data-theme="soft-dark"] .import-executive-heading > div > p,
+:root[data-theme="soft-dark"] .import-destination-detail p { color: #a8b3c5 !important; }
+:root[data-theme="soft-dark"] .import-destination-summary { border-color: #334155; background: #1e293b; }
+:root[data-theme="soft-dark"] .import-destination-summary > strong { color: #f3f4f6 !important; }
 :root[data-theme="soft-dark"] .import-overall-status.is-ready { color: #86efac; background: #1d3b31; }
 :root[data-theme="soft-dark"] .import-overall-status.is-warning { color: #fde68a; background: #3b3421; }
 :root[data-theme="soft-dark"] .import-overall-status.is-action { color: #fda4af; background: #3b252c; }
