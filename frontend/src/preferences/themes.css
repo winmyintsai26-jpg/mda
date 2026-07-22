@@ -190,6 +190,7 @@ body,
 :root[data-theme="soft-dark"] .import-plan-list p,
 :root[data-theme="soft-dark"] .import-plan-status-grid div,
 :root[data-theme="soft-dark"] .import-complete-grid div,
+:root[data-theme="soft-dark"] .import-empty-destination,
 :root[data-theme="soft-dark"] .import-executive-summary,
 :root[data-theme="soft-dark"] .import-executive-grid > div,
 :root[data-theme="soft-dark"] .import-review-card,
@@ -205,6 +206,8 @@ body,
 
 :root[data-theme="soft-dark"] .import-review-card > summary:hover,
 :root[data-theme="soft-dark"] .import-review-card[open] > summary { background: #2d3b52 !important; }
+:root[data-theme="soft-dark"] .import-empty-destination h2 { color: #f3f4f6 !important; }
+:root[data-theme="soft-dark"] .import-empty-destination p { color: #a8b3c5 !important; }
 :root[data-theme="soft-dark"] .import-executive-grid strong,
 :root[data-theme="soft-dark"] .import-review-copy strong,
 :root[data-theme="soft-dark"] .import-review-data-list dd,

@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import { useUpload } from "../context/UploadContext";
 import { useDatabaseConnection } from "../context/DatabaseConnectionContext";
 import { normalizeHeader } from "../utils/headerNormalizer";
-import { COLUMN_NAMES_MUST_MATCH_MESSAGE } from "../utils/importValidationMessage";
 
 const STATUS_LABELS = {
     ready: "Ready",
@@ -166,20 +165,10 @@ function Import() {
     }, [comparison, previewHeaderCollisions.length, schema.length, selectedAnalysisTable?.validation?.isValid, selectedDatabase, selectedTable]);
 
     const readinessMessage = useMemo(() => {
-        if (!reviewState.destinationReady) return "Select a destination on Connections before importing.";
-        if (previewHeaderCollisions.length > 0) {
-            return `${previewHeaderCollisions.length} column name conflict${previewHeaderCollisions.length === 1 ? "" : "s"} must be resolved.`;
-        }
-        if (comparison.matchedColumns.length === 0) return COLUMN_NAMES_MUST_MATCH_MESSAGE;
-        if (reviewState.tone === "warning") {
-            const warnings = [];
-            if (validationIssueCount > 0) warnings.push(`${validationIssueCount} validation item${validationIssueCount === 1 ? " requires" : "s require"} review`);
-            if (comparison.missing.length > 0) warnings.push(`${comparison.missing.length} destination column${comparison.missing.length === 1 ? " is" : "s are"} not mapped`);
-            if (comparison.extra.length > 0) warnings.push(`${comparison.extra.length} source column${comparison.extra.length === 1 ? " will" : "s will"} not be imported`);
-            return `${warnings.join(". ")}.`;
-        }
+        if (reviewState.hasBlockingIssue) return "Resolve the blocking item below before importing.";
+        if (reviewState.tone === "warning") return "Review the highlighted item below before importing.";
         return "No blocking issues detected.";
-    }, [comparison.extra.length, comparison.matchedColumns.length, comparison.missing.length, previewHeaderCollisions.length, reviewState.destinationReady, reviewState.tone, validationIssueCount]);
+    }, [reviewState.hasBlockingIssue, reviewState.tone]);
 
     const handleImport = () => {
         if (!table || !selectedDatabase || !selectedTable) {
@@ -221,6 +210,29 @@ function Import() {
         );
     }
 
+    if (!reviewState.destinationReady) {
+        return (
+            <div className="import-page">
+                <div className="import-shell">
+                    <div className="import-header">
+                        <div>
+                            <p className="dashboard-eyebrow">Smart Import Plan</p>
+                            <h1>Final review before import.</h1>
+                            <p>Confirm where the reviewed workbook data will go.</p>
+                        </div>
+                    </div>
+
+                    <section className="import-empty-destination" aria-labelledby="empty-destination-title">
+                        <span>Destination</span>
+                        <h2 id="empty-destination-title">No destination selected.</h2>
+                        <p>Select a destination from Connections before importing.</p>
+                        <button type="button" className="secondary" onClick={() => navigate("/connections")}>Go to Connections</button>
+                    </section>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className="import-page">
             <div className="import-shell">
@@ -243,9 +255,9 @@ function Import() {
                             <i aria-hidden="true" /> {STATUS_LABELS[reviewState.tone]}
                         </span>
                     </div>
-                    <div className={`import-destination-summary ${reviewState.destinationReady ? "is-selected" : "is-missing"}`}>
+                    <div className="import-destination-summary is-selected">
                         <span>Destination</span>
-                        <strong>{reviewState.destinationReady ? <>{connectionName || "Database Connection"}<i aria-hidden="true">→</i>{selectedTable}</> : "No destination selected"}</strong>
+                        <strong>{connectionName || "Database Connection"}<i aria-hidden="true">→</i>{selectedTable}</strong>
                     </div>
                 </section>
 
@@ -265,16 +277,14 @@ function Import() {
 
                     <PlanStatusCard
                         title="Column Mapping"
-                        tone={!reviewState.destinationReady || comparison.ready.length === 0 ? "action" : comparison.missing.length > 0 || comparison.extra.length > 0 ? "warning" : "ready"}
-                        summary={!reviewState.destinationReady
-                            ? "Destination required to review mappings."
-                            : comparison.ready.length === 0
-                                ? "Column names must be matched."
-                                : comparison.missing.length > 0
-                                    ? `${comparison.missing.length} destination column${comparison.missing.length === 1 ? " requires" : "s require"} mapping.`
-                                    : comparison.extra.length > 0
-                                        ? `${comparison.extra.length} source column${comparison.extra.length === 1 ? " will" : "s will"} not be imported.`
-                                        : `All ${comparison.ready.length} columns are mapped.`}
+                        tone={comparison.ready.length === 0 ? "action" : comparison.missing.length > 0 || comparison.extra.length > 0 ? "warning" : "ready"}
+                        summary={comparison.ready.length === 0
+                            ? "Column names must be matched."
+                            : comparison.missing.length > 0
+                                ? `${comparison.missing.length} destination column${comparison.missing.length === 1 ? " requires" : "s require"} mapping.`
+                                : comparison.extra.length > 0
+                                    ? `${comparison.extra.length} source column${comparison.extra.length === 1 ? " will" : "s will"} not be imported.`
+                                    : `All ${comparison.ready.length} columns are mapped.`}
                     >
                         <div className="comparison-grid">
                             <div className="comparison-block ready">
@@ -300,33 +310,24 @@ function Import() {
 
                     <PlanStatusCard
                         title="Transformations"
-                        tone={!reviewState.destinationReady ? "action" : comparison.extra.length > 0 ? "warning" : "ready"}
-                        summary={!reviewState.destinationReady
-                            ? "Destination required to confirm transformations."
-                            : comparison.extra.length > 0
-                                ? `Conversions will be applied; ${comparison.extra.length} column${comparison.extra.length === 1 ? " is" : "s are"} excluded.`
-                                : "Numeric and date conversions will be applied."}
+                        tone="ready"
+                        summary="Numeric and date conversions will be applied."
                     >
                         <div className="import-plan-list">
                             <p><strong>Value formatting</strong><span>Numbers, dates, true/false values, and empty cells will use the existing import rules.</span></p>
-                            <p><strong>Column handling</strong><span>{comparison.extra.length} source column{comparison.extra.length === 1 ? "" : "s"} without a destination match will not be imported.</span></p>
                         </div>
                     </PlanStatusCard>
 
                     <PlanStatusCard
                         title="Validation"
-                        tone={!reviewState.destinationReady || previewHeaderCollisions.length > 0 ? "action" : selectedAnalysisTable?.validation?.isValid === false || comparison.missing.length > 0 ? "warning" : "ready"}
-                        summary={!reviewState.destinationReady
-                            ? "Destination required to complete validation."
-                            : previewHeaderCollisions.length > 0
-                                ? `${previewHeaderCollisions.length} column name conflict${previewHeaderCollisions.length === 1 ? "" : "s"} detected.`
-                                : selectedAnalysisTable?.validation?.isValid === false
-                                    ? validationIssueCount > 0
-                                        ? `${validationIssueCount} validation item${validationIssueCount === 1 ? " requires" : "s require"} review.`
-                                        : "Validation issues require review."
-                                    : comparison.missing.length > 0
-                                        ? `${comparison.missing.length} unmapped column${comparison.missing.length === 1 ? " requires" : "s require"} review.`
-                                        : "No validation issues detected."}
+                        tone={previewHeaderCollisions.length > 0 ? "action" : selectedAnalysisTable?.validation?.isValid === false ? "warning" : "ready"}
+                        summary={previewHeaderCollisions.length > 0
+                            ? `${previewHeaderCollisions.length} column name conflict${previewHeaderCollisions.length === 1 ? "" : "s"} detected.`
+                            : selectedAnalysisTable?.validation?.isValid === false
+                                ? validationIssueCount > 0
+                                    ? `${validationIssueCount} validation item${validationIssueCount === 1 ? " requires" : "s require"} review.`
+                                    : "Validation issues require review."
+                                : "No validation issues detected."}
                     >
                         <div className="import-plan-status-grid">
                             <div><span>Table review</span><strong>{selectedAnalysisTable?.validation?.isValid ? "Ready" : "Review"}</strong></div>
@@ -334,7 +335,6 @@ function Import() {
                             <div><span>Missing columns</span><strong>{comparison.missing.length}</strong></div>
                             <div><span>Column conflicts</span><strong>{previewHeaderCollisions.length}</strong></div>
                         </div>
-                        {previewHeaderCollisions.length > 0 && <p className="import-message error">{COLUMN_NAMES_MUST_MATCH_MESSAGE}</p>}
                         {validationIssues.map((issue) => <p className="import-help-text" key={`issue-${issue}`}>{issue}</p>)}
                         {validationWarnings.map((warning) => <p className="import-help-text" key={`warning-${warning}`}>{warning}</p>)}
                         <p className="import-help-text">Destination requirements and value checks will run when the import begins.</p>
@@ -342,23 +342,19 @@ function Import() {
 
                     <PlanStatusCard
                         title="Duplicate Detection"
-                        tone={reviewState.destinationReady ? "ready" : "action"}
-                        summary={reviewState.destinationReady
-                            ? "No duplicate conflicts detected."
-                            : "Destination required to confirm duplicate handling."}
+                        tone="ready"
+                        summary="No duplicate conflicts detected."
                     >
                         <p className="import-help-text">MDA will follow the duplicate rules already defined for the selected destination table.</p>
                     </PlanStatusCard>
 
                     <PlanStatusCard
                         title="Destination"
-                        tone={reviewState.destinationReady ? "ready" : "action"}
-                        summary={reviewState.destinationReady
-                            ? `${connectionName || "Database Connection"} → ${selectedTable}`
-                            : "No destination selected."}
+                        tone="ready"
+                        summary={`${connectionName || "Database Connection"} → ${selectedTable}`}
                     >
                         <div className="import-destination-detail">
-                            <p>{reviewState.destinationReady ? "This reusable destination is managed on the Connections page." : "Configure and select the reusable destination on the Connections page."}</p>
+                            <p>This reusable destination is managed on the Connections page.</p>
                             <button type="button" className="secondary" onClick={() => navigate("/connections")}>Manage Connections</button>
                         </div>
                     </PlanStatusCard>
@@ -368,16 +364,14 @@ function Import() {
                     <div>
                         <span>Final decision</span>
                         <h2>{READINESS_TITLES[reviewState.tone]}</h2>
-                        <p>{reviewState.destinationReady
-                            ? `${table.rows.length.toLocaleString("en-US")} reviewed rows will be sent to ${connectionName || "Database Connection"} → ${selectedTable}.`
-                            : "Select a destination on Connections to complete this review."}</p>
+                        <p>{table.rows.length.toLocaleString("en-US")} reviewed rows will be sent to {connectionName || "Database Connection"} → {selectedTable}.</p>
                     </div>
                     <div className="import-actions-row">
                         <button
                             type="button"
                             className="primary import-execute-button"
                             onClick={handleImport}
-                            disabled={!reviewState.destinationReady || comparison.matchedColumns.length === 0 || previewHeaderCollisions.length > 0}
+                            disabled={comparison.matchedColumns.length === 0 || previewHeaderCollisions.length > 0}
                         >
                             <span className="button-content"><span>Execute Import</span></span>
                         </button>

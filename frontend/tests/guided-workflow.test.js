@@ -55,6 +55,11 @@ test("the import review separates connection configuration from the final checkl
     assert.match(importPlanSource, /Ready with Warnings/);
     assert.match(importPlanSource, /No blocking issues detected/);
     assert.match(importPlanSource, /connectionName.*selectedTable/s);
+    assert.match(importPlanSource, /if \(!reviewState\.destinationReady\)/);
+    assert.match(importPlanSource, /No destination selected\./);
+    assert.match(importPlanSource, /Select a destination from Connections before importing\./);
+    assert.match(importPlanSource, />Go to Connections</);
+    assert.equal((importPlanSource.match(/No destination selected\./g) || []).length, 1);
     assert.doesNotMatch(importPlanSource, /<span>Host<\/span>/);
     assert.doesNotMatch(importPlanSource, /<span>Port<\/span>/);
     assert.doesNotMatch(importPlanSource, /<span>Username<\/span>/);
