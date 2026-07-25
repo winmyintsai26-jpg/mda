@@ -6,6 +6,7 @@ import ImportComplete from "./pages/ImportComplete";
 import Preview from "./pages/Preview";
 import AppLayout from "./application/components/AppLayout";
 import Analytics from "./application/pages/Analytics";
+import AiAnalysis from "./application/pages/AiAnalysis";
 import WorkbookDetails from "./application/pages/WorkbookDetails";
 import Workbooks from "./application/pages/Workbooks";
 import Profile from "./application/pages/Profile";
@@ -46,6 +47,7 @@ function App() {
                     <Route path="/import-plan" element={<Import />} />
                     <Route path="/import" element={<ImportComplete />} />
                     <Route path="/analytics" element={<Analytics />} />
+                    <Route path="/ai-analysis" element={<AiAnalysis />} />
                     <Route path="/templates" element={<Navigate replace to="/workbooks" />} />
                     <Route path="/database-connections" element={<Navigate replace to="/connections" />} />
                     <Route path="/import-history" element={<Navigate replace to="/workbooks" />} />

@@ -1,4 +1,5 @@
 using ClosedXML.Excel;
+using MDA.API.AIAnalysis;
 using MDA.API.Database;
 using MDA.API.WorkbookAnalysis;
 using MDA.API.WorkbookAnalysis.Columns;
@@ -25,6 +26,8 @@ builder.Services.AddCors(options =>
 builder.Services.AddScoped<MySqlConnectionService>();
 builder.Services.AddScoped<MySqlSchemaService>();
 builder.Services.AddScoped<MySqlImportService>();
+builder.Services.Configure<LocalAiOptions>(builder.Configuration.GetSection("AiAnalysis:Local"));
+builder.Services.AddHttpClient<IAiExplanationProvider, OllamaAiExplanationProvider>();
 
 builder.Services.AddScoped<IWorkbookLoader, DefaultWorkbookLoader>();
 builder.Services.AddScoped<WorksheetScanner>();
@@ -174,6 +177,38 @@ app.MapPost("/database/mysql/import", async (MySqlImportRequest request, MySqlIm
     {
         Console.Error.WriteLine($"[MySQL Import] Unexpected error: {ex.Message}");
         return Results.BadRequest(new { message = "Import failed due to an unexpected server error. Verify table access and source data, then try again." });
+    }
+});
+
+app.MapPost("/ai/analysis/explain", async (AiAnalysisRequest request, IAiExplanationProvider provider, CancellationToken cancellationToken) =>
+{
+    if (string.IsNullOrWhiteSpace(request.Question))
+    {
+        return Results.BadRequest(new { message = "A question is required." });
+    }
+
+    if (request.Question.Length > 2_000)
+    {
+        return Results.BadRequest(new { message = "The question is too long." });
+    }
+
+    if (request.Evidence is null
+        || request.Evidence.Facts is null
+        || !ApprovedAiAnalysisOperations.All.Contains(request.Evidence.Operation)
+        || request.Evidence.Facts.Count == 0
+        || request.Evidence.Facts.Count > 20)
+    {
+        return Results.BadRequest(new { message = "Verified MDA evidence is required." });
+    }
+
+    try
+    {
+        var result = await provider.ExplainAsync(request, cancellationToken);
+        return Results.Ok(result);
+    }
+    catch (AiProviderUnavailableException exception)
+    {
+        return Results.Json(new { message = exception.Message }, statusCode: StatusCodes.Status503ServiceUnavailable);
     }
 });
 

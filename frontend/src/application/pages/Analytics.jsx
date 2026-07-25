@@ -360,7 +360,8 @@ function Analytics() {
                         <summary aria-label="More analysis actions">More actions</summary>
                         <div><button type="button" onClick={() => window.print()}>Print report</button><button type="button" onClick={exportSummary}>Export summary</button></div>
                     </details>
-                    <button type="button" className="primary" onClick={() => document.getElementById("visual-evidence-heading")?.scrollIntoView({ behavior: "smooth", block: "start" })}>Explore Data</button>
+                    <button type="button" onClick={() => document.getElementById("visual-evidence-heading")?.scrollIntoView({ behavior: "smooth", block: "start" })}>Explore Data</button>
+                    <Link className="primary" to="/ai-analysis">Ask MDA</Link>
                 </div>
             </header>
 
