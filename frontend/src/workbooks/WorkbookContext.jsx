@@ -1,28 +1,46 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { workbookStorage } from "./workbookStorage";
+import { useAuth } from "../auth/AuthContext.jsx";
 
 /* eslint-disable react-refresh/only-export-components */
 
-const STORAGE_KEY = "mda.workbooks.v1";
+const STORAGE_KEY = "mda.workbooks.v2";
 const WorkbookContext = createContext(null);
 
-function readStoredWorkbooks() {
+function userStorageKey(userId) {
+    return `${STORAGE_KEY}.${userId}`;
+}
+
+function readStoredWorkbooks(userId) {
+    if (!userId) return [];
     try {
-        const value = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+        const key = userStorageKey(userId);
+        let rawValue = localStorage.getItem(key);
+        if (!rawValue) {
+            rawValue = localStorage.getItem("mda.workbooks.v1");
+            if (rawValue) {
+                const legacyWorkbooks = JSON.parse(rawValue);
+                rawValue = JSON.stringify(Array.isArray(legacyWorkbooks) ? legacyWorkbooks.map((workbook) => ({ ...workbook, userId })) : []);
+                localStorage.setItem(key, rawValue);
+                localStorage.removeItem("mda.workbooks.v1");
+            }
+        }
+        const value = JSON.parse(rawValue || "[]");
         return Array.isArray(value) ? value : [];
     } catch {
         return [];
     }
 }
 
-function persist(workbooks) {
+function persist(userId, workbooks) {
+    if (!userId) return;
     try {
         const summaries = workbooks.map((workbook) => {
             const summary = { ...workbook };
             delete summary.snapshot;
             return summary;
         });
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(summaries));
+        localStorage.setItem(userStorageKey(userId), JSON.stringify(summaries));
     } catch {
         // The in-memory workspace remains usable when browser storage is blocked.
     }
@@ -34,20 +52,30 @@ function createWorkbookId(name) {
 }
 
 export function WorkbookProvider({ children }) {
-    const [workbooks, setWorkbooks] = useState(readStoredWorkbooks);
+    const { user } = useAuth();
+    const userId = user?.id || null;
+    return <ScopedWorkbookProvider key={userId || "anonymous"} userId={userId}>{children}</ScopedWorkbookProvider>;
+}
+
+function ScopedWorkbookProvider({ children, userId }) {
+    const [workbooks, setWorkbooks] = useState(() => readStoredWorkbooks(userId));
 
     useEffect(() => {
-        workbookStorage.getAll()
+        if (!userId) return undefined;
+        let active = true;
+        workbookStorage.getAll(userId)
             .then((stored) => {
-                if (stored.length) setWorkbooks(stored.sort((left, right) => new Date(right.modifiedAt) - new Date(left.modifiedAt)));
+                if (active && stored.length) setWorkbooks(stored.sort((left, right) => new Date(right.modifiedAt) - new Date(left.modifiedAt)));
             })
             .catch(() => {});
-    }, []);
+        return () => { active = false; };
+    }, [userId]);
 
     const saveWorkbook = useCallback((workbook) => {
         const now = new Date().toISOString();
         const saved = {
             ...workbook,
+            userId,
             id: workbook.id || createWorkbookId(workbook.name),
             createdAt: workbook.createdAt || now,
             modifiedAt: now
@@ -55,31 +83,31 @@ export function WorkbookProvider({ children }) {
 
         setWorkbooks((current) => {
             const next = [saved, ...current.filter((item) => item.id !== saved.id)];
-            persist(next);
-            workbookStorage.put(saved).catch(() => {});
+            persist(userId, next);
+            workbookStorage.put(userId, saved).catch(() => {});
             return next;
         });
         return saved;
-    }, []);
+    }, [userId]);
 
     const removeWorkbook = useCallback((workbookId) => {
         setWorkbooks((current) => {
             const next = current.filter((item) => item.id !== workbookId);
-            persist(next);
-            workbookStorage.remove(workbookId).catch(() => {});
+            persist(userId, next);
+            workbookStorage.remove(userId, workbookId).catch(() => {});
             return next;
         });
-    }, []);
+    }, [userId]);
 
     const removeWorkbooks = useCallback((workbookIds) => {
         const ids = new Set(workbookIds);
         setWorkbooks((current) => {
             const next = current.filter((item) => !ids.has(item.id));
-            persist(next);
-            Promise.all([...ids].map((workbookId) => workbookStorage.remove(workbookId))).catch(() => {});
+            persist(userId, next);
+            Promise.all([...ids].map((workbookId) => workbookStorage.remove(userId, workbookId))).catch(() => {});
             return next;
         });
-    }, []);
+    }, [userId]);
 
     const value = useMemo(() => ({ workbooks, saveWorkbook, removeWorkbook, removeWorkbooks }), [removeWorkbook, removeWorkbooks, saveWorkbook, workbooks]);
     return <WorkbookContext.Provider value={value}>{children}</WorkbookContext.Provider>;

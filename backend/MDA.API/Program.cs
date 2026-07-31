@@ -1,27 +1,117 @@
+using System.Text;
+using System.Threading.RateLimiting;
 using ClosedXML.Excel;
 using MDA.API.AIAnalysis;
+using MDA.API.Authentication.Data;
+using MDA.API.Authentication.Models;
+using MDA.API.Authentication.Options;
+using MDA.API.Authentication.Repositories;
+using MDA.API.Authentication.Services;
 using MDA.API.Database;
 using MDA.API.WorkbookAnalysis;
 using MDA.API.WorkbookAnalysis.Columns;
 using MDA.API.WorkbookAnalysis.DataTypes;
 using MDA.API.WorkbookAnalysis.Pipeline;
 using MDA.API.WorkbookAnalysis.Validation;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Swagger
 builder.Services.AddOpenApi();
+builder.Services.AddControllers();
 
 // Allow React to call this API
+var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>()
+    ?? ["http://localhost:5173"];
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
     {
-        policy.AllowAnyOrigin()
+        policy.WithOrigins(allowedOrigins)
               .AllowAnyHeader()
-              .AllowAnyMethod();
+              .AllowAnyMethod()
+              .AllowCredentials();
     });
 });
+
+var jwtSection = builder.Configuration.GetSection(JwtOptions.SectionName);
+var jwtOptions = jwtSection.Get<JwtOptions>()
+    ?? throw new InvalidOperationException("JWT configuration is required.");
+if (jwtOptions.SigningKey.Length < 32)
+{
+    if (!builder.Environment.IsDevelopment())
+    {
+        throw new InvalidOperationException("Configure Jwt:SigningKey with at least 32 characters using an environment variable or secret store.");
+    }
+
+    jwtOptions.SigningKey = Convert.ToBase64String(System.Security.Cryptography.RandomNumberGenerator.GetBytes(48));
+}
+if (string.IsNullOrWhiteSpace(jwtOptions.Issuer)
+    || string.IsNullOrWhiteSpace(jwtOptions.Audience)
+    || jwtOptions.AccessTokenMinutes is <= 0 or > 60
+    || jwtOptions.RefreshTokenDays is <= 0 or > 90)
+{
+    throw new InvalidOperationException("JWT issuer, audience, and token lifetimes must be configured correctly.");
+}
+builder.Services.AddSingleton(Microsoft.Extensions.Options.Options.Create(jwtOptions));
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.MapInboundClaims = false;
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidIssuer = jwtOptions.Issuer,
+            ValidateAudience = true,
+            ValidAudience = jwtOptions.Audience,
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtOptions.SigningKey)),
+            ValidateLifetime = true,
+            ClockSkew = TimeSpan.FromSeconds(30)
+        };
+    });
+builder.Services.AddAuthorization();
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.AddPolicy("auth", context => RateLimitPartition.GetFixedWindowLimiter(
+        context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+        _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = 10,
+            Window = TimeSpan.FromMinutes(1),
+            QueueLimit = 0,
+            AutoReplenishment = true
+        }));
+});
+builder.Services.AddDbContext<MdaDbContext>(options =>
+    options.UseSqlite(builder.Configuration.GetConnectionString("MdaMetadata")));
+builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IJwtService, JwtService>();
+builder.Services.AddScoped<IEmailVerificationTokenService, EmailVerificationTokenService>();
+builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.AddHttpClient<IEmailSender, ResendEmailSender>(client =>
+{
+    client.BaseAddress = new Uri("https://api.resend.com/");
+    client.Timeout = TimeSpan.FromSeconds(15);
+});
+builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
+builder.Services.AddSingleton<TimeProvider>(TimeProvider.System);
+
+var emailSection = builder.Configuration.GetSection(EmailOptions.SectionName);
+builder.Services.AddOptions<EmailOptions>()
+    .Bind(emailSection)
+    .Validate(options => string.Equals(options.Provider, "Resend", StringComparison.OrdinalIgnoreCase), "Email provider must be Resend.")
+    .Validate(options => !string.IsNullOrWhiteSpace(options.From), "Email sender is required.")
+    .Validate(options => Uri.TryCreate(options.FrontendBaseUrl, UriKind.Absolute, out _), "Email frontend base URL must be absolute.")
+    .Validate(options => options.VerificationTokenHours == 24, "Email verification tokens must expire after 24 hours.")
+    .ValidateOnStart();
 
 builder.Services.AddScoped<MySqlConnectionService>();
 builder.Services.AddScoped<MySqlSchemaService>();
@@ -50,14 +140,27 @@ builder.Services.AddScoped<WorkbookAnalyzer>();
 
 var app = builder.Build();
 
+Directory.CreateDirectory(Path.Combine(app.Environment.ContentRootPath, "Data"));
+await using (var scope = app.Services.CreateAsyncScope())
+{
+    var dbContext = scope.ServiceProvider.GetRequiredService<MdaDbContext>();
+    await dbContext.Database.MigrateAsync();
+}
+
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
 }
 
-app.UseCors();
-
 app.UseHttpsRedirection();
+
+app.UseRouting();
+app.UseCors();
+app.UseAuthentication();
+app.UseAuthorization();
+app.UseRateLimiter();
+
+app.MapControllers();
 
 app.MapGet("/", () => "MDA API is Running!");
 
@@ -91,7 +194,8 @@ app.MapPost("/upload", async (IFormFile file) =>
 
     return Results.Ok(rows);
 })
-.DisableAntiforgery();
+.DisableAntiforgery()
+.RequireAuthorization();
 
 app.MapPost("/analyze", async (IFormFile file, IWorkbookLoader loader, WorkbookAnalyzer analyzer) =>
 {
@@ -115,13 +219,14 @@ app.MapPost("/analyze", async (IFormFile file, IWorkbookLoader loader, WorkbookA
     return Results.Ok(analysisResult);
 })
 
-.DisableAntiforgery();
+.DisableAntiforgery()
+.RequireAuthorization();
 
 app.MapPost("/database/mysql/test-connection", async (MySqlConnectionRequest request, MySqlConnectionService connectionService, CancellationToken cancellationToken) =>
 {
     var result = await connectionService.TestConnectionAsync(request, cancellationToken);
     return result.Success ? Results.Ok(result) : Results.BadRequest(result);
-});
+}).RequireAuthorization();
 
 app.MapPost("/database/mysql/databases", async (MySqlConnectionRequest request, MySqlSchemaService schemaService, CancellationToken cancellationToken) =>
 {
@@ -134,7 +239,7 @@ app.MapPost("/database/mysql/databases", async (MySqlConnectionRequest request, 
     {
         return Results.BadRequest(new { message = ex.Message });
     }
-});
+}).RequireAuthorization();
 
 app.MapPost("/database/mysql/tables", async (MySqlDatabaseRequest request, MySqlSchemaService schemaService, CancellationToken cancellationToken) =>
 {
@@ -147,7 +252,7 @@ app.MapPost("/database/mysql/tables", async (MySqlDatabaseRequest request, MySql
     {
         return Results.BadRequest(new { message = ex.Message });
     }
-});
+}).RequireAuthorization();
 
 app.MapPost("/database/mysql/schema", async (MySqlTableRequest request, MySqlSchemaService schemaService, CancellationToken cancellationToken) =>
 {
@@ -160,7 +265,7 @@ app.MapPost("/database/mysql/schema", async (MySqlTableRequest request, MySqlSch
     {
         return Results.BadRequest(new { message = ex.Message });
     }
-});
+}).RequireAuthorization();
 
 app.MapPost("/database/mysql/import", async (MySqlImportRequest request, MySqlImportService importService, CancellationToken cancellationToken) =>
 {
@@ -178,7 +283,7 @@ app.MapPost("/database/mysql/import", async (MySqlImportRequest request, MySqlIm
         Console.Error.WriteLine($"[MySQL Import] Unexpected error: {ex.Message}");
         return Results.BadRequest(new { message = "Import failed due to an unexpected server error. Verify table access and source data, then try again." });
     }
-});
+}).RequireAuthorization();
 
 app.MapPost("/ai/analysis/explain", async (AiAnalysisRequest request, IAiExplanationProvider provider, CancellationToken cancellationToken) =>
 {
@@ -210,6 +315,6 @@ app.MapPost("/ai/analysis/explain", async (AiAnalysisRequest request, IAiExplana
     {
         return Results.Json(new { message = exception.Message }, statusCode: StatusCodes.Status503ServiceUnavailable);
     }
-});
+}).RequireAuthorization();
 
 app.Run();

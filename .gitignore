@@ -8,6 +8,9 @@ node_modules/
 # Backend generated build output and validation artifacts
 backend/MDA.API/temp/
 backend/MDA.API/temp/**
+backend/MDA.API/Data/*.db
+backend/MDA.API/Data/*.db-shm
+backend/MDA.API/Data/*.db-wal
 
 .env
 

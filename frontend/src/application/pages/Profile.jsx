@@ -1,11 +1,13 @@
 import { useMemo, useState } from "react";
 
 import { usePreferences } from "../../preferences/PreferencesContext";
+import { useAuth } from "../../auth/AuthContext.jsx";
 import AppIcon from "../components/AppIcon";
 import PageHeader from "../components/PageHeader";
 import SectionCard from "../components/SectionCard";
 
 function Profile() {
+    const { user } = useAuth();
     const { preferences, savePreferences } = usePreferences();
     const [draft, setDraft] = useState(preferences);
     const [saved, setSaved] = useState(false);
@@ -27,7 +29,7 @@ function Profile() {
             <SectionCard eyebrow="Your details" title="Personal Information" description="The name displayed throughout your MDA workspace.">
                 <div className="mda-profile-form">
                     <label><span>Display Name</span><input value={draft.displayName} onChange={(event) => { setSaved(false); setDraft((current) => ({ ...current, displayName: event.target.value })); }} /></label>
-                    <label><span>Email</span><input value={draft.email} readOnly aria-readonly="true" /><small>Email editing will be available when authentication is connected.</small></label>
+                    <label><span>Email</span><input value={user?.email || draft.email} readOnly aria-readonly="true" /><small>Your verified account email is managed by MDA authentication.</small></label>
                 </div>
             </SectionCard>
             <SectionCard eyebrow="Workspace comfort" title="Appearance" description="Choose a calm theme for long working sessions.">

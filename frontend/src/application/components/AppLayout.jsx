@@ -1,5 +1,6 @@
-import { NavLink, Outlet, useLocation } from "react-router-dom";
+import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 
+import { useAuth } from "../../auth/AuthContext.jsx";
 import AppIcon from "./AppIcon";
 import WorkflowProgress from "./WorkflowProgress";
 import { usePreferences } from "../../preferences/PreferencesContext";
@@ -18,6 +19,8 @@ const bottomNavigation = [
 
 function AppLayout() {
     const { pathname } = useLocation();
+    const navigate = useNavigate();
+    const { logout } = useAuth();
     const { preferences } = usePreferences();
     const isWorkbookWorkflow = ["/upload", "/preview", "/import-plan", "/import", "/analytics"].includes(pathname);
 
@@ -55,6 +58,7 @@ function AppLayout() {
 
                 <nav className="mda-app-navigation mda-app-bottom-navigation" aria-label="Personal navigation">
                     {bottomNavigation.map((item) => <NavLink className={({ isActive }) => `mda-app-nav-link${isActive ? " is-active" : ""}`} key={item.to} to={item.to} end={item.end}><AppIcon name={item.icon} /><span>{item.label}</span>{item.to === "/profile" && <small>{preferences.displayName}</small>}</NavLink>)}
+                    <button className="mda-app-nav-link mda-app-nav-button" type="button" onClick={async () => { try { await logout(); } catch { /* Local session is still cleared. */ } navigate("/login", { replace: true }); }}><AppIcon name="logout" /><span>Log out</span></button>
                 </nav>
 
             </aside>

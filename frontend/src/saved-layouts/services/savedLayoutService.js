@@ -1,8 +1,25 @@
-const STORAGE_KEY = "mda.saved-layouts.v1";
+import { requireCurrentUserId } from "../../auth/userOwnership.js";
+
+const STORAGE_KEY = "mda.saved-layouts.v2";
+
+function ownerStorageKey() {
+    return `${STORAGE_KEY}.${requireCurrentUserId()}`;
+}
 
 class LocalStorageSavedLayoutRepository {
     readAll() {
-        const rawValue = window.localStorage.getItem(STORAGE_KEY);
+        const ownerId = requireCurrentUserId();
+        const key = ownerStorageKey();
+        let rawValue = window.localStorage.getItem(key);
+        if (!rawValue) {
+            const legacyValue = window.localStorage.getItem("mda.saved-layouts.v1");
+            if (legacyValue) {
+                const legacyLayouts = JSON.parse(legacyValue);
+                rawValue = JSON.stringify(Array.isArray(legacyLayouts) ? legacyLayouts.map((layout) => ({ ...layout, userId: ownerId })) : []);
+                window.localStorage.setItem(key, rawValue);
+                window.localStorage.removeItem("mda.saved-layouts.v1");
+            }
+        }
         if (!rawValue) {
             return [];
         }
@@ -12,7 +29,7 @@ class LocalStorageSavedLayoutRepository {
     }
 
     writeAll(layouts) {
-        window.localStorage.setItem(STORAGE_KEY, JSON.stringify(layouts));
+        window.localStorage.setItem(ownerStorageKey(), JSON.stringify(layouts));
     }
 }
 
@@ -34,18 +51,20 @@ export class SavedLayoutService {
             throw new Error("A valid saved layout is required.");
         }
 
+        const ownerId = requireCurrentUserId();
+        const ownedLayout = { ...layout, userId: ownerId };
         const layouts = this.getAll();
         const existingIndex = layouts.findIndex((candidate) => candidate.id === layout.id);
         const nextLayouts = [...layouts];
 
         if (existingIndex >= 0) {
-            nextLayouts[existingIndex] = layout;
+            nextLayouts[existingIndex] = ownedLayout;
         } else {
-            nextLayouts.push(layout);
+            nextLayouts.push(ownedLayout);
         }
 
         this.repository.writeAll(nextLayouts);
-        return layout;
+        return ownedLayout;
     }
 
     markUsed(layoutId) {

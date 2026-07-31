@@ -2600,3 +2600,25 @@ button:not(:disabled):hover,
         transform: none;
     }
 }
+/* Prevent protected content from flashing while the HttpOnly refresh session is restored. */
+.mda-auth-restoring {
+    min-height: 100vh;
+    display: grid;
+    place-content: center;
+    justify-items: center;
+    gap: 12px;
+    color: #64748b;
+    background: var(--mda-theme-bg, #f7fbff);
+    font-size: 13px;
+}
+
+.mda-auth-restoring span {
+    width: 28px;
+    height: 28px;
+    border: 3px solid #dbeafe;
+    border-top-color: #3b82f6;
+    border-radius: 50%;
+    animation: mda-auth-spin .7s linear infinite;
+}
+
+@keyframes mda-auth-spin { to { transform: rotate(360deg); } }

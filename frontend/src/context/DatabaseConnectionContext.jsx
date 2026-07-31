@@ -1,5 +1,5 @@
 import { createContext, useContext, useMemo, useState } from "react";
-import { API_BASE_URL } from "../config/api";
+import { apiFetch } from "../auth/authClient.js";
 
 /* eslint-disable react-refresh/only-export-components */
 
@@ -56,7 +56,7 @@ export function DatabaseConnectionProvider({ children }) {
         setSchema([]);
 
         try {
-            const connectionResponse = await fetch(`${API_BASE_URL}/database/mysql/test-connection`, {
+            const connectionResponse = await apiFetch("/database/mysql/test-connection", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(requestBody)
@@ -66,7 +66,7 @@ export function DatabaseConnectionProvider({ children }) {
                 throw new Error(connectionPayload.message || connectionPayload.Message || "Unable to connect to MySQL.");
             }
 
-            const databasesResponse = await fetch(`${API_BASE_URL}/database/mysql/databases`, {
+            const databasesResponse = await apiFetch("/database/mysql/databases", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(requestBody)
@@ -96,7 +96,7 @@ export function DatabaseConnectionProvider({ children }) {
         if (!database) return;
 
         try {
-            const response = await fetch(`${API_BASE_URL}/database/mysql/tables`, {
+            const response = await apiFetch("/database/mysql/tables", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ ...requestBody, database })
@@ -117,7 +117,7 @@ export function DatabaseConnectionProvider({ children }) {
         if (!table || !selectedDatabase) return;
 
         try {
-            const response = await fetch(`${API_BASE_URL}/database/mysql/schema`, {
+            const response = await apiFetch("/database/mysql/schema", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ ...requestBody, database: selectedDatabase, table })

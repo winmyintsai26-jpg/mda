@@ -1,14 +1,14 @@
-import { API_BASE_URL } from "../../config/api.js";
+import { apiFetch } from "../../auth/authClient.js";
 import { AiAnalysisProvider } from "./AiAnalysisProvider.js";
 
 export class LocalAiAnalysisProvider extends AiAnalysisProvider {
-    constructor(endpoint = `${API_BASE_URL}/ai/analysis/explain`) {
+    constructor(endpoint = "/ai/analysis/explain") {
         super();
         this.endpoint = endpoint;
     }
 
     async explain({ question, conversation, evidence }) {
-        const response = await fetch(this.endpoint, {
+        const response = await apiFetch(this.endpoint, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({

@@ -1,5 +1,7 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
+import { useAuth } from "../../../auth/AuthContext.jsx";
 import AuthField from "../components/AuthField";
 import AuthLayout from "../components/AuthLayout";
 
@@ -38,6 +40,8 @@ const validateRegistration = (form) => {
 };
 
 function Register() {
+    const navigate = useNavigate();
+    const { register } = useAuth();
     const [form, setForm] = useState({
         firstName: "",
         lastName: "",
@@ -49,6 +53,7 @@ function Register() {
     const [errors, setErrors] = useState({});
     const [touched, setTouched] = useState({});
     const [status, setStatus] = useState("");
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     const handleChange = (event) => {
         const { name, type, checked, value } = event.target;
@@ -66,7 +71,7 @@ function Register() {
         setErrors(validateRegistration(form));
     };
 
-    const handleSubmit = (event) => {
+    const handleSubmit = async (event) => {
         event.preventDefault();
         const validationErrors = validateRegistration(form);
         setErrors(validationErrors);
@@ -84,7 +89,32 @@ function Register() {
             return;
         }
 
-        setStatus("Registration UI is ready. Account creation will be connected in a future task.");
+        setIsSubmitting(true);
+        try {
+            const result = await register({
+                displayName: `${form.firstName.trim()} ${form.lastName.trim()}`,
+                email: form.email.trim(),
+                password: form.password
+            });
+            navigate("/check-email", { replace: true, state: { email: result.email || form.email.trim() } });
+        } catch (error) {
+            if (error.details?.accountCreated) {
+                navigate("/check-email", {
+                    replace: true,
+                    state: { email: error.details.email || form.email.trim(), deliveryFailed: true }
+                });
+                return;
+            }
+            const serverErrors = error.errors || {};
+            setErrors((current) => ({
+                ...current,
+                email: serverErrors.Email?.[0] || current.email,
+                password: serverErrors.Password?.[0] || current.password
+            }));
+            setStatus(error.message || "Unable to create your account. Please try again.");
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     return (
@@ -160,14 +190,14 @@ function Register() {
                 <div className={`mda-auth-terms ${errors.acceptTerms ? "has-error" : ""}`}>
                     <label className="mda-auth-checkbox">
                         <input name="acceptTerms" type="checkbox" checked={form.acceptTerms} onChange={handleChange} />
-                        <span>I agree to the future MDA Terms of Service and Privacy Policy.</span>
+                        <span>I agree to the MDA Terms of Service and Privacy Policy.</span>
                     </label>
                     {errors.acceptTerms && <p role="alert">{errors.acceptTerms}</p>}
                 </div>
 
-                <button className="mda-auth-submit" type="submit">Create account</button>
+                <button className="mda-auth-submit" type="submit" disabled={isSubmitting}>{isSubmitting ? "Creating account…" : "Create account"}</button>
 
-                {status && <p className="mda-auth-status" role="status">{status}</p>}
+                {status && <p className="mda-auth-status is-error" role="alert">{status}</p>}
             </form>
         </AuthLayout>
     );

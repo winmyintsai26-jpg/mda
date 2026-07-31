@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 
+import { useAuth } from "../../../auth/AuthContext.jsx";
 import AuthField from "../components/AuthField";
 import AuthLayout from "../components/AuthLayout";
 
@@ -24,14 +25,19 @@ const validateLogin = ({ email, password }) => {
 
 function Login() {
     const navigate = useNavigate();
-    const [form, setForm] = useState({ email: "", password: "", remember: false });
+    const location = useLocation();
+    const { login } = useAuth();
+    const [form, setForm] = useState({ email: "", password: "" });
     const [errors, setErrors] = useState({});
     const [touched, setTouched] = useState({});
+    const [status, setStatus] = useState("");
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     const handleChange = (event) => {
         const { name, type, checked, value } = event.target;
         const nextForm = { ...form, [name]: type === "checkbox" ? checked : value };
         setForm(nextForm);
+        setStatus("");
         if (touched[name]) {
             setErrors(validateLogin(nextForm));
         }
@@ -42,7 +48,7 @@ function Login() {
         setErrors(validateLogin(form));
     };
 
-    const handleSubmit = (event) => {
+    const handleSubmit = async (event) => {
         event.preventDefault();
         const validationErrors = validateLogin(form);
         setErrors(validationErrors);
@@ -52,7 +58,20 @@ function Login() {
             return;
         }
 
-        navigate("/dashboard");
+        setIsSubmitting(true);
+        setStatus("");
+        try {
+            await login({ email: form.email.trim(), password: form.password });
+            navigate(location.state?.from || "/dashboard", { replace: true });
+        } catch (error) {
+            if (error.code === "email_verification_required") {
+                navigate("/check-email", { state: { email: form.email.trim() } });
+                return;
+            }
+            setStatus(error.message || "Unable to log in. Please try again.");
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     return (
@@ -90,15 +109,13 @@ function Login() {
                 />
 
                 <div className="mda-auth-form-options">
-                    <label className="mda-auth-checkbox">
-                        <input name="remember" type="checkbox" checked={form.remember} onChange={handleChange} />
-                        <span>Remember me</span>
-                    </label>
+                    <span />
                     <Link className="mda-auth-text-button" to="/forgot-password">Forgot password?</Link>
                 </div>
 
-                <button className="mda-auth-submit" type="submit">Log in</button>
+                <button className="mda-auth-submit" type="submit" disabled={isSubmitting}>{isSubmitting ? "Logging in…" : "Log in"}</button>
 
+                {status && <p className="mda-auth-status is-error" role="alert">{status}</p>}
             </form>
         </AuthLayout>
     );

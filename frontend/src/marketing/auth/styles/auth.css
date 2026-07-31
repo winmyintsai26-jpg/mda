@@ -335,6 +335,13 @@
     transition: background 150ms ease, box-shadow 150ms ease, transform 150ms ease;
 }
 
+.mda-public-site .mda-auth-submit:disabled,
+.mda-public-site .mda-auth-submit:disabled:hover {
+    opacity: .68;
+    cursor: wait;
+    transform: none;
+}
+
 .mda-public-site .mda-auth-submit:hover {
     background: #183fc9;
     box-shadow: 0 12px 28px rgba(36, 87, 245, 0.28);
@@ -350,6 +357,12 @@
     background: #f1fbf5;
     font-size: 12px;
     line-height: 1.5;
+}
+
+.mda-public-site .mda-auth-status.is-error {
+    border-color: #fecaca;
+    color: #991b1b;
+    background: #fff7f7;
 }
 
 .mda-public-site .mda-auth-alternate {
@@ -377,6 +390,94 @@
     margin: 0 0 0 24px;
     color: #be3944;
     font-size: 11px;
+}
+
+.mda-public-site .mda-auth-verification {
+    display: grid;
+    gap: 14px;
+    text-align: center;
+}
+
+.mda-public-site .mda-auth-verification-icon,
+.mda-public-site .mda-auth-verification-result > span {
+    width: 58px;
+    height: 58px;
+    margin: 0 auto 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 18px;
+    color: #2457f5;
+    background: #eff6ff;
+    font-size: 25px;
+    font-weight: 800;
+}
+
+.mda-public-site .mda-auth-verification p,
+.mda-public-site .mda-auth-verification-result p {
+    margin: 0;
+    color: #69768a;
+    font-size: 14px;
+    line-height: 1.55;
+}
+
+.mda-public-site .mda-auth-verification strong {
+    color: #101827;
+    font-size: 16px;
+    overflow-wrap: anywhere;
+}
+
+.mda-public-site .mda-auth-verification .mda-auth-verification-note {
+    margin: 5px 0 8px;
+    color: #8a95a5;
+    font-size: 12px;
+}
+
+.mda-public-site .mda-auth-secondary {
+    min-height: 48px;
+    border: 1px solid #cfdaf9;
+    border-radius: 11px;
+    color: #2457f5;
+    background: #ffffff;
+    font: inherit;
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.mda-public-site .mda-auth-secondary:hover {
+    border-color: #9fb4f5;
+    background: #f7f9ff;
+}
+
+.mda-public-site .mda-auth-secondary:disabled {
+    opacity: .65;
+    cursor: wait;
+}
+
+.mda-public-site .mda-auth-verification-result {
+    display: grid;
+    gap: 20px;
+    text-align: center;
+}
+
+.mda-public-site .mda-auth-verification-result.is-success > span {
+    color: #17633b;
+    background: #f1fbf5;
+}
+
+.mda-public-site .mda-auth-verification-result.is-expired_token > span,
+.mda-public-site .mda-auth-verification-result.is-used_token > span,
+.mda-public-site .mda-auth-verification-result.is-invalid_token > span,
+.mda-public-site .mda-auth-verification-result.is-error > span {
+    color: #991b1b;
+    background: #fff1f2;
+}
+
+.mda-public-site .mda-auth-verification-result .mda-auth-submit {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
 }
 
 @media (max-width: 940px) {

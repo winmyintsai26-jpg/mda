@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import UploadCard from "../components/UploadCard";
 import { useUpload } from "../context/UploadContext";
 import { createPreviewTablesFromAnalysis } from "../utils/previewModel";
-import { API_BASE_URL } from "../config/api";
+import { apiFetch } from "../auth/authClient.js";
 import SavedLayoutMatchDialog from "../saved-layouts/components/SavedLayoutMatchDialog";
 import { savedLayoutService } from "../saved-layouts/services/savedLayoutService";
 import { layoutMatchingService } from "../saved-layouts/services/layoutMatchingService";
@@ -119,7 +119,7 @@ function Dashboard() {
         try {
             setIsAnalyzing(true);
 
-            const response = await fetch(`${API_BASE_URL}/analyze`, {
+            const response = await apiFetch("/analyze", {
                 method: "POST",
                 body: formData,
             });

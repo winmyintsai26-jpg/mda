@@ -1,9 +1,9 @@
-import { API_BASE_URL } from "../config/api.js";
+import { apiFetch } from "../auth/authClient.js";
 import { createImportExecutor } from "./createImportExecutor.js";
 
 export const executeImportPlan = createImportExecutor(async (plan) => {
         const startedAt = performance.now();
-        const response = await fetch(`${API_BASE_URL}/database/mysql/import`, {
+        const response = await apiFetch("/database/mysql/import", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
